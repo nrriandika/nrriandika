@@ -342,48 +342,67 @@ const ERA_RANGES = {
   'recent': '2020-2025',
 };
 
-/** Find songs by parameters — uses owner's token so it works without login */
-app.get('/api/find-songs', async (req, res) => {
+/** Ask Groq LLM for song suggestions, then enrich with Spotify data */
+async function generateSongSuggestions({ mood, genre, era, keyword }) {
+  const GROQ_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_KEY) throw new Error('GROQ_API_KEY not set');
+
+  const criteria = [];
+  if (mood)    criteria.push(`Mood: ${mood}`);
+  if (genre)   criteria.push(`Genre: ${String(genre).replace(/-/g, ' ')}`);
+  if (era)     criteria.push(`Era: ${era}`);
+  if (keyword) criteria.push(`Keyword/vibe: ${keyword}`);
+
+  const prompt = `You are a music expert. Recommend exactly 10 REAL, existing songs matching these criteria:
+
+${criteria.join('\n')}
+
+Mix popular and lesser-known tracks. Return ONLY a valid JSON array with this exact shape (no markdown, no commentary):
+[{"name":"Song Title","artist":"Artist Name"},{"name":"...","artist":"..."}]`;
+
+  const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: 'You are a knowledgeable music recommendation assistant. You only output valid JSON.' },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.8,
+    max_tokens: 800,
+    response_format: { type: 'json_object' },
+  }, {
+    headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+  });
+
+  const content = res.data.choices?.[0]?.message?.content || '';
+
+  // Parse — Groq might wrap in an object like { "songs": [...] }
+  let parsed;
   try {
-    const { mood, genre, era, keyword } = req.query;
+    parsed = JSON.parse(content);
+  } catch {
+    // Try extracting JSON array from text
+    const match = content.match(/\[[\s\S]*\]/);
+    if (match) parsed = JSON.parse(match[0]);
+    else throw new Error('Could not parse LLM response');
+  }
 
-    // Build Spotify search query — treat everything as free text except year
-    // (strict genre: filter returns very few results when combined with text)
-    const parts = [];
-    if (mood && MOOD_KEYWORDS[mood]) parts.push(MOOD_KEYWORDS[mood]);
-    if (genre)                       parts.push(String(genre).replace(/-/g, ' '));
-    if (keyword)                     parts.push(String(keyword).trim().slice(0, 60));
-    if (era && ERA_RANGES[era])      parts.push(`year:${ERA_RANGES[era]}`);
+  const list = Array.isArray(parsed) ? parsed : (parsed.songs || parsed.tracks || parsed.recommendations || []);
+  return list.filter(x => x && x.name && x.artist).slice(0, 10);
+}
 
-    if (parts.length === 0) {
-      return res.status(400).json({ error: 'no_parameters', message: 'Pick at least one parameter' });
-    }
+/** Search a single track on Spotify — returns first match with full metadata */
+async function spotifyTrackLookup(token, name, artist) {
+  const q = `track:"${name}" artist:"${artist}"`;
+  const url = `${SPOTIFY_API_BASE}/search?${querystring.stringify({ q, type: 'track', limit: '1' })}`;
 
-    const query = parts.join(' ');
-
-    // Get owner token (visitor doesn't need to login)
-    const token = await getOwnerToken();
-    if (!token) {
-      return res.status(503).json({ error: 'owner_not_connected', message: 'Owner Spotify not configured' });
-    }
-
-    const searchUrl = `${SPOTIFY_API_BASE}/search?${querystring.stringify({
-      q: query,
-      type: 'track',
-      limit: '10',
-    })}`;
-
-    const { data } = await axios.get(searchUrl, {
+  try {
+    const { data } = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
       validateStatus: null,
     });
-
-    if (!data || !data.tracks) {
-      console.error('find-songs: unexpected response', data);
-      return res.status(502).json({ error: 'bad_response', message: data?.error?.message || 'Unexpected response' });
-    }
-
-    const tracks = (data.tracks.items || []).map(t => ({
+    const t = data?.tracks?.items?.[0];
+    if (!t) return null;
+    return {
       id:       t.id,
       name:     t.name,
       artist:   t.artists.map(a => a.name).join(', '),
@@ -392,7 +411,47 @@ app.get('/api/find-songs', async (req, res) => {
       preview:  t.preview_url,
       url:      t.external_urls?.spotify || null,
       duration: t.duration_ms,
-    }));
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** AI-powered song finder: Groq LLM → Spotify enrichment */
+app.get('/api/find-songs', async (req, res) => {
+  try {
+    const { mood, genre, era, keyword } = req.query;
+
+    if (!mood && !genre && !era && !keyword) {
+      return res.status(400).json({ error: 'no_parameters', message: 'Pick at least one parameter' });
+    }
+
+    // Get owner token (visitor doesn't need to login)
+    const token = await getOwnerToken();
+    if (!token) {
+      return res.status(503).json({ error: 'owner_not_connected', message: 'Owner Spotify not configured' });
+    }
+
+    // Step 1: Ask Groq for song suggestions
+    let suggestions;
+    try {
+      suggestions = await generateSongSuggestions({ mood, genre, era, keyword });
+    } catch (err) {
+      console.error('Groq error:', err.response?.data || err.message);
+      return res.status(502).json({ error: 'ai_failed', message: 'AI suggestion failed. ' + err.message });
+    }
+
+    if (!suggestions || suggestions.length === 0) {
+      return res.json({ query: 'AI suggestions', tracks: [] });
+    }
+
+    // Step 2: Enrich each suggestion with Spotify data (parallel)
+    const enriched = await Promise.all(
+      suggestions.map(s => spotifyTrackLookup(token, s.name, s.artist))
+    );
+
+    const tracks = enriched.filter(Boolean);
+    const query = [mood, genre, era, keyword].filter(Boolean).join(' · ');
 
     res.json({ query, tracks });
   } catch (err) {
