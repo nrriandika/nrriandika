@@ -45,8 +45,8 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname)));
+// Serve static frontend files from public/
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── Spotify helpers ────────────────────────────────────────────
 const SPOTIFY_SCOPES = [
@@ -329,7 +329,7 @@ app.post('/api/recommendations/:id/like', requireSupabase, async (req, res) => {
 
 // ─── SPA fallback ────────────────────────────────────────────────
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ─── Start ──────────────────────────────────────────────────────
