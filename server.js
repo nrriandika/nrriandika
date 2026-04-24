@@ -366,8 +366,13 @@ app.get('/api/find-songs', async (req, res) => {
       return res.status(503).json({ error: 'owner_not_connected', message: 'Owner Spotify not configured' });
     }
 
-    const { data } = await axios.get(`${SPOTIFY_API_BASE}/search`, {
-      params: { q: query, type: 'track', limit: 12 },
+    const searchUrl = `${SPOTIFY_API_BASE}/search?${querystring.stringify({
+      q: query,
+      type: 'track',
+      limit: '10',
+    })}`;
+
+    const { data } = await axios.get(searchUrl, {
       headers: { Authorization: `Bearer ${token}` },
       validateStatus: null,
     });
