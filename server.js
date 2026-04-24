@@ -240,33 +240,119 @@ app.get('/api/recent-tracks', requireSpotify, async (req, res) => {
   }
 });
 
+// ─── Recommendations (Supabase) ─────────────────────────────────
+const supabase = require('./supabase');
+
+/** Get all recommendations (newest first) */
+app.get('/api/recommendations', async (_req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('recommendations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('recommendations fetch error:', err.message);
+    res.status(500).json({ error: 'fetch_failed' });
+  }
+});
+
+/** Submit a new recommendation */
+app.post('/api/recommendations', async (req, res) => {
+  const { type, name, reason, submitted_by, emoji } = req.body;
+
+  if (!type || !name || !name.trim()) {
+    return res.status(400).json({ error: 'type and name are required' });
+  }
+
+  if (!['song', 'artist'].includes(type)) {
+    return res.status(400).json({ error: 'type must be "song" or "artist"' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('recommendations')
+      .insert({
+        type,
+        name: name.trim().slice(0, 200),
+        reason: reason ? reason.trim().slice(0, 300) : null,
+        submitted_by: (submitted_by && submitted_by.trim()) ? submitted_by.trim().slice(0, 50) : 'Anonymous',
+        emoji: emoji || (type === 'song' ? '🎵' : '🎤'),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (err) {
+    console.error('recommendation insert error:', err.message);
+    res.status(500).json({ error: 'insert_failed' });
+  }
+});
+
+/** Like a recommendation */
+app.post('/api/recommendations/:id/like', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Fetch current likes
+    const { data: rec, error: fetchErr } = await supabase
+      .from('recommendations')
+      .select('likes')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr) throw fetchErr;
+
+    const { data, error } = await supabase
+      .from('recommendations')
+      .update({ likes: (rec.likes || 0) + 1 })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('like error:', err.message);
+    res.status(500).json({ error: 'like_failed' });
+  }
+});
+
 // ─── SPA fallback ────────────────────────────────────────────────
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ─── Start ──────────────────────────────────────────────────────
-// Optional HTTPS: run `mkcert localhost` first, then set USE_HTTPS=true in .env
-const USE_HTTPS = process.env.USE_HTTPS === 'true';
+// Only listen when running locally (not on Vercel)
+if (process.env.VERCEL !== '1') {
+  const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
-if (USE_HTTPS) {
-  const certPath = process.env.SSL_CERT || path.join(__dirname, 'localhost.pem');
-  const keyPath  = process.env.SSL_KEY  || path.join(__dirname, 'localhost-key.pem');
+  if (USE_HTTPS) {
+    const certPath = process.env.SSL_CERT || path.join(__dirname, 'localhost.pem');
+    const keyPath  = process.env.SSL_KEY  || path.join(__dirname, 'localhost-key.pem');
 
-  if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
-    console.error('\n❌  SSL cert not found. Run: mkcert localhost');
-    console.error('    Expected:', certPath, 'and', keyPath, '\n');
-    process.exit(1);
-  }
+    if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+      console.error('\n❌  SSL cert not found. Run: mkcert localhost');
+      console.error('    Expected:', certPath, 'and', keyPath, '\n');
+      process.exit(1);
+    }
 
-  https.createServer({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) }, app)
-    .listen(PORT, () => {
-      console.log(`\n🔒  Server running at https://localhost:${PORT}`);
-      console.log(`🎵  Spotify auth: https://localhost:${PORT}/auth/login\n`);
+    https.createServer({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) }, app)
+      .listen(PORT, () => {
+        console.log(`\n🔒  Server running at https://localhost:${PORT}`);
+        console.log(`🎵  Spotify auth: https://localhost:${PORT}/auth/login\n`);
+      });
+  } else {
+    app.listen(PORT, () => {
+      console.log(`\n🌐  Server running at http://localhost:${PORT}`);
+      console.log(`🎵  Spotify auth: http://localhost:${PORT}/auth/login\n`);
     });
-} else {
-  app.listen(PORT, () => {
-    console.log(`\n🌐  Server running at http://localhost:${PORT}`);
-    console.log(`🎵  Spotify auth: http://localhost:${PORT}/auth/login\n`);
-  });
+  }
 }
+
+// Export for Vercel serverless
+module.exports = app;

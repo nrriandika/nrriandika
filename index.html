@@ -82,9 +82,7 @@
 
         <article class="work-card work-card--featured" data-index="0">
           <div class="work-card-media">
-            <div class="work-card-placeholder" style="--c1:#6C63FF;--c2:#a78bfa">
-              <svg viewBox="0 0 60 40" fill="none"><rect x="8" y="8" width="20" height="14" rx="2" fill="white" fill-opacity=".15"/><rect x="32" y="8" width="20" height="14" rx="2" fill="white" fill-opacity=".15"/><rect x="8" y="26" width="44" height="6" rx="2" fill="white" fill-opacity=".1"/></svg>
-            </div>
+            <img src="src/img/sitaswil.png" alt="Sitaswil" class="work-card-img" />
             <div class="work-card-tag">Featured</div>
           </div>
           <div class="work-card-body">
@@ -108,9 +106,8 @@
 
         <article class="work-card" data-index="1">
           <div class="work-card-media">
-            <div class="work-card-placeholder" style="--c1:#0ea5e9;--c2:#38bdf8">
-              <svg viewBox="0 0 60 40" fill="none"><circle cx="30" cy="20" r="12" stroke="white" stroke-opacity=".2" stroke-width="2"/><path d="M18 20h24M30 8v24" stroke="white" stroke-opacity=".3" stroke-width="2"/></svg>
-            </div>
+            <!-- Ganti src dengan gambar project IoT -->
+            <img src="src/img/iot.png" alt="Internet of Things" class="work-card-img" />
           </div>
           <div class="work-card-body">
             <div class="work-card-meta">
@@ -133,9 +130,8 @@
 
         <article class="work-card" data-index="2">
           <div class="work-card-media">
-            <div class="work-card-placeholder" style="--c1:#10b981;--c2:#34d399">
-              <svg viewBox="0 0 60 40" fill="none"><path d="M10 30 L20 20 L30 25 L40 15 L50 18" stroke="white" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/><path d="M10 32 L20 22 L30 27 L40 17 L50 20" stroke="white" stroke-opacity=".15" stroke-width="8" stroke-linecap="round"/></svg>
-            </div>
+            <!-- Ganti src dengan gambar project EWS -->
+            <img src="src/img/ews.png" alt="Early Warning System" class="work-card-img" />
           </div>
           <div class="work-card-body">
             <div class="work-card-meta">
@@ -158,9 +154,8 @@
 
         <article class="work-card" data-index="3">
           <div class="work-card-media">
-            <div class="work-card-placeholder" style="--c1:#f59e0b;--c2:#fbbf24">
-              <svg viewBox="0 0 60 40" fill="none"><rect x="14" y="10" width="32" height="20" rx="3" stroke="white" stroke-opacity=".3" stroke-width="2"/><path d="M22 20h16M30 14v12" stroke="white" stroke-opacity=".4" stroke-width="1.5" stroke-linecap="round"/></svg>
-            </div>
+            <!-- Ganti src dengan gambar project Drone -->
+            <img src="src/img/drone.png" alt="Automation Drone Detection" class="work-card-img" />
           </div>
           <div class="work-card-body">
             <div class="work-card-meta">
@@ -218,13 +213,17 @@
           </div>
           <div class="game-card-footer">
             <h3 class="game-title">Genshin Impact</h3>
-            <p class="game-desc">Gacha collector, world explorer, lore chaser. Currently farming resin in Natlan.</p>
+            <p class="game-desc">Teyvat has its own laws! Currently at Temple of Space</p>
             <div class="game-tags">
               <span class="game-tag">Hoyoverse</span>
               <span class="game-tag">Action RPG</span>
               <span class="game-tag">Co-op</span>
             </div>
           </div>
+          <button class="game-connect-btn" data-game="genshin">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 1v6M8 15v-6M1 8h6M15 8H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Connect with me
+          </button>
         </article>
 
         <!-- Hogwarts Legacy -->
@@ -249,13 +248,17 @@
           </div>
           <div class="game-card-footer">
             <h3 class="game-title">Hogwarts Legacy</h3>
-            <p class="game-desc">Exploring the wizarding world, mastering spells, and uncovering ancient magic.</p>
+            <p class="game-desc">I'm building my wizardry career here</p>
             <div class="game-tags">
               <span class="game-tag">Avalanche</span>
               <span class="game-tag">Open World RPG</span>
               <span class="game-tag">Single Player</span>
             </div>
           </div>
+          <button class="game-connect-btn" data-game="hogwarts">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 1v6M8 15v-6M1 8h6M15 8H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Connect with me
+          </button>
         </article>
 
         <!-- Arknights Endfield -->
@@ -280,13 +283,17 @@
           </div>
           <div class="game-card-footer">
             <h3 class="game-title">Arknights: Endfield</h3>
-            <p class="game-desc">Hypergryph's 3D action RPG set in the Arknights universe. Factory management meets tactical combat.</p>
+            <p class="game-desc">Factory must grow!!!</p>
             <div class="game-tags">
               <span class="game-tag">Hypergryph</span>
               <span class="game-tag">RPG Factory</span>
               <span class="game-tag">Single Player</span>
             </div>
           </div>
+          <button class="game-connect-btn" data-game="endfield">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 1v6M8 15v-6M1 8h6M15 8H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Connect with me
+          </button>
         </article>
 
       </div>
@@ -400,8 +407,219 @@
         </div>
 
       </div>
+
+      <!-- ─── Recommendations ──────────────────────────────────── -->
+      <div class="recs-wrapper" id="recs-wrapper">
+        <div class="recs-header">
+          <div>
+            <h3 class="recs-title">Recommend me something</h3>
+            <p class="recs-subtitle">Got a song or artist I should check out? Drop it here.</p>
+          </div>
+          <div class="recs-counter">
+            <span id="recs-count">0</span> recs
+          </div>
+        </div>
+
+        <!-- Input Form -->
+        <div class="recs-form" id="recs-form">
+          <div class="recs-type-toggle">
+            <button class="recs-type-btn recs-type-btn--active" data-type="song">
+              <span class="recs-type-icon">🎵</span> Song
+            </button>
+            <button class="recs-type-btn" data-type="artist">
+              <span class="recs-type-icon">🎤</span> Artist
+            </button>
+          </div>
+
+          <div class="recs-fields">
+            <div class="recs-field-group recs-field-group--main">
+              <input type="text" id="rec-name" class="recs-input" placeholder="Song or artist name..." maxlength="200" autocomplete="off" />
+            </div>
+            <div class="recs-field-row">
+              <div class="recs-field-group">
+                <input type="text" id="rec-reason" class="recs-input recs-input--sm" placeholder="Why should I listen? (optional)" maxlength="300" />
+              </div>
+              <div class="recs-field-group">
+                <input type="text" id="rec-name-by" class="recs-input recs-input--sm" placeholder="Your name (optional)" maxlength="50" />
+              </div>
+            </div>
+            <div class="recs-emoji-picker" id="recs-emoji-picker">
+              <span class="recs-emoji-label">Vibe:</span>
+              <button class="recs-emoji recs-emoji--active" data-emoji="🎵">🎵</button>
+              <button class="recs-emoji" data-emoji="🔥">🔥</button>
+              <button class="recs-emoji" data-emoji="💜">💜</button>
+              <button class="recs-emoji" data-emoji="🌙">🌙</button>
+              <button class="recs-emoji" data-emoji="⚡">⚡</button>
+              <button class="recs-emoji" data-emoji="🎸">🎸</button>
+              <button class="recs-emoji" data-emoji="🎹">🎹</button>
+              <button class="recs-emoji" data-emoji="🎧">🎧</button>
+            </div>
+          </div>
+
+          <button class="btn btn-primary recs-submit" id="recs-submit">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Submit
+          </button>
+          <div class="recs-toast" id="recs-toast"></div>
+        </div>
+
+        <!-- Filter -->
+        <div class="recs-filter">
+          <button class="recs-filter-btn recs-filter-btn--active" data-filter="all">All</button>
+          <button class="recs-filter-btn" data-filter="song">Songs</button>
+          <button class="recs-filter-btn" data-filter="artist">Artists</button>
+        </div>
+
+        <!-- Display List -->
+        <div class="recs-list" id="recs-list">
+          <div class="recs-loading">
+            <div class="recs-loading-dot"></div>
+            <div class="recs-loading-dot"></div>
+            <div class="recs-loading-dot"></div>
+          </div>
+        </div>
+
+        <div class="recs-empty" id="recs-empty" style="display:none">
+          <span class="recs-empty-icon">🎶</span>
+          <p>No recommendations yet. Be the first!</p>
+        </div>
+      </div>
+
     </div>
   </section>
+
+  <!-- ─── Game Connect Modal ──────────────────────────────────── -->
+  <div class="gm-overlay" id="gm-overlay">
+    <div class="gm-modal" id="gm-modal">
+      <button class="gm-close" id="gm-close">
+        <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+
+      <!-- Genshin -->
+      <div class="gm-content" data-modal="genshin">
+        <div class="gm-header" style="--gm-c1:#7c3aed;--gm-c2:#2563eb">
+          <div class="gm-header-bg"></div>
+          <div class="gm-avatar">
+            <img src="src/img/hu-tao-birthday-art-genshinimpact.jpg" alt="Genshin" />
+          </div>
+          <h3 class="gm-title">Genshin Impact</h3>
+          <span class="gm-badge"><span class="status-dot status-dot--active"></span> Online</span>
+        </div>
+        <div class="gm-body">
+          <div class="gm-info-grid">
+            <div class="gm-info-item">
+              <span class="gm-info-label">UID</span>
+              <span class="gm-info-value gm-copyable" data-copy="825773547">809444086
+                <svg viewBox="0 0 16 16" fill="none" width="12"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              </span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Server</span>
+              <span class="gm-info-value">Asia</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">AR</span>
+              <span class="gm-info-value">60</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Main</span>
+              <span class="gm-info-value">Hu Tao</span>
+            </div>
+          </div>
+          <div class="gm-note">
+            <p>Feel free to add me! I'm usually online in the night. Let's co-op domains together.</p>
+          </div>
+          <button class="btn btn-primary gm-copy-uid" data-copy="809444086">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Copy UID
+          </button>
+        </div>
+      </div>
+
+      <!-- Hogwarts -->
+      <div class="gm-content" data-modal="hogwarts" style="display:none">
+        <div class="gm-header" style="--gm-c1:#92400e;--gm-c2:#7c3aed">
+          <div class="gm-header-bg"></div>
+          <div class="gm-avatar">
+            <img src="src/img/HogwartsLegacyPeruharrypotter_900x.jpg" alt="Hogwarts" />
+          </div>
+          <h3 class="gm-title">Hogwarts Legacy</h3>
+          <span class="gm-badge"><span class="status-dot status-dot--idle"></span> Casual</span>
+        </div>
+        <div class="gm-body">
+          <div class="gm-info-grid">
+            <div class="gm-info-item">
+              <span class="gm-info-label">Platform</span>
+              <span class="gm-info-value">PC (Steam)</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">House</span>
+              <span class="gm-info-value">Ravenclaw</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Level</span>
+              <span class="gm-info-value">40</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Wand</span>
+              <span class="gm-info-value">Dragon Heartstring</span>
+            </div>
+          </div>
+          <div class="gm-note">
+            <p>Single player game, but feel free to share your builds and discuss theories with me!</p>
+          </div>
+          <a href="https://steamcommunity.com/" target="_blank" rel="noopener" class="btn btn-primary gm-external">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M6 10L14 2M14 2H10M14 2v4M14 8v4.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-9A1.5 1.5 0 013.5 2H8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Steam Profile
+          </a>
+        </div>
+      </div>
+
+      <!-- Endfield -->
+      <div class="gm-content" data-modal="endfield" style="display:none">
+        <div class="gm-header" style="--gm-c1:#0891b2;--gm-c2:#10b981">
+          <div class="gm-header-bg"></div>
+          <div class="gm-avatar">
+            <img src="src/img/484345201_1220170502791610_7905123984809730802_n.jpg" alt="Endfield" />
+          </div>
+          <h3 class="gm-title">Arknights: Endfield</h3>
+          <span class="gm-badge"><span class="status-dot status-dot--active"></span> Active</span>
+        </div>
+        <div class="gm-body">
+          <div class="gm-info-grid">
+            <div class="gm-info-item">
+              <span class="gm-info-label">Player ID</span>
+              <span class="gm-info-value gm-copyable" data-copy="nrriandika">nrriandika
+                <svg viewBox="0 0 16 16" fill="none" width="12"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              </span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Server</span>
+              <span class="gm-info-value">Asia</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Focus</span>
+              <span class="gm-info-value">Factory Optimization</span>
+            </div>
+            <div class="gm-info-item">
+              <span class="gm-info-label">Platform</span>
+              <span class="gm-info-value">PC</span>
+            </div>
+          </div>
+          <div class="gm-note">
+            <p>Always looking for efficient factory layouts. Add me and let's share blueprints!</p>
+          </div>
+          <button class="btn btn-primary gm-copy-uid" data-copy="nrriandika">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Copy Player ID
+          </button>
+        </div>
+      </div>
+
+      <!-- Copy toast -->
+      <div class="gm-toast" id="gm-toast">Copied!</div>
+    </div>
+  </div>
 
   <!-- ─── Footer ────────────────────────────────────────────────── -->
   <footer class="footer">
@@ -416,5 +634,6 @@
 
   <script src="script.js"></script>
   <script src="spotify.js"></script>
+  <script src="recommendations.js"></script>
 </body>
 </html>

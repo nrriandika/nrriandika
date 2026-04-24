@@ -137,6 +137,68 @@ document.querySelectorAll('.game-card').forEach(card => {
   });
 });
 
+// ─── Game Connect Modal ─────────────────────────────────────────
+const gmOverlay = document.getElementById('gm-overlay');
+const gmModal   = document.getElementById('gm-modal');
+const gmClose   = document.getElementById('gm-close');
+const gmToast   = document.getElementById('gm-toast');
+
+function openGameModal(gameId) {
+  // Hide all content panels, show the right one
+  gmModal.querySelectorAll('.gm-content').forEach(el => {
+    el.style.display = el.dataset.modal === gameId ? '' : 'none';
+  });
+  gmOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGameModal() {
+  gmOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Open on button click
+document.querySelectorAll('.game-connect-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openGameModal(btn.dataset.game);
+  });
+});
+
+// Close handlers
+gmClose?.addEventListener('click', closeGameModal);
+gmOverlay?.addEventListener('click', (e) => {
+  if (e.target === gmOverlay) closeGameModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && gmOverlay?.classList.contains('open')) closeGameModal();
+});
+
+// Copy to clipboard
+function gmCopy(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    gmToast.classList.add('show');
+    gmToast.textContent = `Copied: ${text}`;
+    setTimeout(() => gmToast.classList.remove('show'), 1800);
+  });
+}
+
+// Copyable values (inline)
+gmModal?.addEventListener('click', (e) => {
+  const copyable = e.target.closest('.gm-copyable');
+  if (copyable) {
+    gmCopy(copyable.dataset.copy);
+    return;
+  }
+  const copyBtn = e.target.closest('.gm-copy-uid');
+  if (copyBtn) {
+    gmCopy(copyBtn.dataset.copy);
+    const orig = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!';
+    setTimeout(() => { copyBtn.innerHTML = orig; }, 1500);
+  }
+});
+
 // ─── Work card hover: lift with shadow colour from gradient ──────
 document.querySelectorAll('.work-card').forEach(card => {
   const placeholder = card.querySelector('.work-card-placeholder');
