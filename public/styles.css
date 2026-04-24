@@ -1715,6 +1715,25 @@ svg { display: block; }
   opacity: 0.7;
 }
 
+.finder-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.finder-counter {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-transform: none;
+  letter-spacing: 0;
+  transition: color var(--transition);
+}
+
+.finder-counter--warn { color: #f59e0b; }
+.finder-counter--max  { color: #f87171; }
+
 .finder-chips {
   display: flex;
   flex-wrap: wrap;

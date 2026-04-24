@@ -7,6 +7,7 @@
   // ─── DOM refs ────────────────────────────────────────────────
   const wrapper     = document.getElementById('finder-wrapper');
   const keywordIn   = document.getElementById('finder-keyword');
+  const counterEl   = document.getElementById('finder-counter-num');
   const submitBtn   = document.getElementById('finder-submit');
   const clearBtn    = document.getElementById('finder-clear');
   const resultsEl   = document.getElementById('finder-results');
@@ -196,5 +197,17 @@
   keywordIn.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') findSongs();
   });
+
+  // Live character counter
+  function updateCounter() {
+    const len = keywordIn.value.length;
+    if (counterEl) counterEl.textContent = len;
+    if (counterEl?.parentElement) {
+      counterEl.parentElement.classList.toggle('finder-counter--warn', len > 130);
+      counterEl.parentElement.classList.toggle('finder-counter--max', len >= 150);
+    }
+  }
+  keywordIn.addEventListener('input', updateCounter);
+  updateCounter();
 
 })();

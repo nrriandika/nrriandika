@@ -20,6 +20,7 @@ const crypto        = require('crypto');
 const querystring   = require('querystring');
 const fs            = require('fs');
 const https         = require('https');
+const Anthropic     = require('@anthropic-ai/sdk');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -342,48 +343,54 @@ const ERA_RANGES = {
   'recent': '2020-2025',
 };
 
-/** Ask Groq LLM for song suggestions, then enrich with Spotify data */
+// ─── Anthropic (Claude Haiku) client ───────────────────────────
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
+
+const FINDER_SYSTEM_PROMPT = `You are a deeply knowledgeable music curator with expertise across genres, eras, and moods worldwide. Your taste is impeccable and you know both mainstream hits and hidden gems.
+
+When given criteria, you suggest exactly 10 REAL, verifiable songs that genuinely match the vibe. Mix popular favorites with lesser-known tracks (70/30 ratio). Avoid generic top-chart-only picks. Consider emotional nuance — "sad" can range from heartbreak to melancholic introspection.
+
+Output ONLY valid JSON in this exact shape, no commentary, no markdown fences:
+{"songs":[{"name":"Exact Song Title","artist":"Exact Artist Name"}, ...]}
+
+Rules:
+- Song and artist names must be accurate and searchable on Spotify
+- No duplicates, no covers unless specifically relevant
+- If criteria are contradictory, prioritize the most specific keyword`;
+
+/** Ask Claude Haiku for 10 song suggestions matching user criteria */
 async function generateSongSuggestions({ mood, genre, era, keyword }) {
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_KEY) throw new Error('GROQ_API_KEY not set');
+  if (!anthropic) throw new Error('ANTHROPIC_API_KEY not set');
 
   const criteria = [];
-  if (mood)    criteria.push(`Mood: ${mood}`);
-  if (genre)   criteria.push(`Genre: ${String(genre).replace(/-/g, ' ')}`);
-  if (era)     criteria.push(`Era: ${era}`);
-  if (keyword) criteria.push(`Keyword/vibe: ${keyword}`);
+  if (mood)    criteria.push(`- Mood: ${mood}`);
+  if (genre)   criteria.push(`- Genre: ${String(genre).replace(/-/g, ' ')}`);
+  if (era)     criteria.push(`- Era: ${era}`);
+  if (keyword) criteria.push(`- Vibe/keyword: "${String(keyword).trim().slice(0, 150)}"`);
 
-  const prompt = `You are a music expert. Recommend exactly 10 REAL, existing songs matching these criteria:
+  const userMessage = `Recommend 10 songs matching:\n${criteria.join('\n')}`;
 
-${criteria.join('\n')}
-
-Mix popular and lesser-known tracks. Return ONLY a valid JSON array with this exact shape (no markdown, no commentary):
-[{"name":"Song Title","artist":"Artist Name"},{"name":"...","artist":"..."}]`;
-
-  const res = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: 'You are a knowledgeable music recommendation assistant. You only output valid JSON.' },
-      { role: 'user', content: prompt },
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    temperature: 0.9,
+    system: [
+      { type: 'text', text: FINDER_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
     ],
-    temperature: 0.8,
-    max_tokens: 800,
-    response_format: { type: 'json_object' },
-  }, {
-    headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+    messages: [{ role: 'user', content: userMessage }],
   });
 
-  const content = res.data.choices?.[0]?.message?.content || '';
+  const content = response.content?.[0]?.text || '';
 
-  // Parse — Groq might wrap in an object like { "songs": [...] }
   let parsed;
   try {
     parsed = JSON.parse(content);
   } catch {
-    // Try extracting JSON array from text
-    const match = content.match(/\[[\s\S]*\]/);
+    const match = content.match(/\{[\s\S]*\}/);
     if (match) parsed = JSON.parse(match[0]);
-    else throw new Error('Could not parse LLM response');
+    else throw new Error('Could not parse AI response');
   }
 
   const list = Array.isArray(parsed) ? parsed : (parsed.songs || parsed.tracks || parsed.recommendations || []);
@@ -417,10 +424,13 @@ async function spotifyTrackLookup(token, name, artist) {
   }
 }
 
-/** AI-powered song finder: Groq LLM → Spotify enrichment */
+/** AI-powered song finder: Claude Haiku → Spotify enrichment */
 app.get('/api/find-songs', async (req, res) => {
   try {
-    const { mood, genre, era, keyword } = req.query;
+    let { mood, genre, era, keyword } = req.query;
+
+    // Enforce keyword length limit (also validated on frontend)
+    if (keyword) keyword = String(keyword).trim().slice(0, 150);
 
     if (!mood && !genre && !era && !keyword) {
       return res.status(400).json({ error: 'no_parameters', message: 'Pick at least one parameter' });
