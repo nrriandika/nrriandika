@@ -422,72 +422,48 @@
           <div>
             <h3 class="finder-title">
               <span class="finder-title-icon">✦</span>
-              Song Finder
+              AI Song Finder
             </h3>
-            <p class="finder-subtitle">Tell me the vibe, I'll find the tracks.</p>
+            <p class="finder-subtitle">Describe the vibe. I'll find the tracks.</p>
           </div>
         </div>
 
         <div class="finder-form">
-          <!-- Mood -->
-          <div class="finder-group">
-            <label class="finder-label">Mood</label>
-            <div class="finder-chips" data-finder="mood">
-              <button class="finder-chip" data-value="happy"><span>🎉</span> Happy</button>
-              <button class="finder-chip" data-value="sad"><span>😔</span> Sad</button>
-              <button class="finder-chip" data-value="chill"><span>🌙</span> Chill</button>
-              <button class="finder-chip" data-value="energetic"><span>⚡</span> Energetic</button>
-              <button class="finder-chip" data-value="romantic"><span>💜</span> Romantic</button>
-              <button class="finder-chip" data-value="melancholic"><span>🍂</span> Melancholic</button>
+          <!-- Prompt input -->
+          <div class="finder-prompt-box">
+            <div class="finder-prompt-icon">
+              <svg viewBox="0 0 20 20" fill="none" width="18"><path d="M10 2v4M10 14v4M2 10h4M14 10h4M4 4l3 3M13 13l3 3M4 16l3-3M13 7l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             </div>
-          </div>
-
-          <!-- Genre -->
-          <div class="finder-group">
-            <label class="finder-label">Genre</label>
-            <div class="finder-chips" data-finder="genre">
-              <button class="finder-chip" data-value="pop">Pop</button>
-              <button class="finder-chip" data-value="rock">Rock</button>
-              <button class="finder-chip" data-value="indie">Indie</button>
-              <button class="finder-chip" data-value="hip-hop">Hip-Hop</button>
-              <button class="finder-chip" data-value="r-n-b">R&amp;B</button>
-              <button class="finder-chip" data-value="electronic">Electronic</button>
-              <button class="finder-chip" data-value="jazz">Jazz</button>
-              <button class="finder-chip" data-value="classical">Classical</button>
-              <button class="finder-chip" data-value="lo-fi">Lo-fi</button>
-              <button class="finder-chip" data-value="k-pop">K-Pop</button>
-            </div>
-          </div>
-
-          <!-- Era -->
-          <div class="finder-group">
-            <label class="finder-label">Era</label>
-            <div class="finder-chips" data-finder="era">
-              <button class="finder-chip" data-value="70s">70s</button>
-              <button class="finder-chip" data-value="80s">80s</button>
-              <button class="finder-chip" data-value="90s">90s</button>
-              <button class="finder-chip" data-value="2000s">2000s</button>
-              <button class="finder-chip" data-value="2010s">2010s</button>
-              <button class="finder-chip" data-value="recent">Recent</button>
-            </div>
-          </div>
-
-          <!-- Keyword -->
-          <div class="finder-group">
-            <label class="finder-label">
-              Describe the vibe <span class="finder-optional">(optional)</span>
+            <textarea id="finder-prompt" class="finder-prompt" rows="2" maxlength="150" placeholder=""></textarea>
+            <div class="finder-prompt-footer">
+              <span class="finder-hint">↵ Enter to search</span>
               <span class="finder-counter"><span id="finder-counter-num">0</span>/150</span>
-            </label>
-            <input type="text" id="finder-keyword" class="finder-input" placeholder="e.g. lagu buat nangis di hujan, main genshin di kereta, night drive..." maxlength="150" />
+            </div>
+          </div>
+
+          <!-- Quick starters -->
+          <div class="finder-quickstart">
+            <span class="finder-quickstart-label">Try</span>
+            <div class="finder-quickstart-chips" id="finder-quickstart">
+              <button class="finder-qs-chip" data-prompt="Sad indie songs for rainy days"><span>🌧️</span> Sad rainy days</button>
+              <button class="finder-qs-chip" data-prompt="High-energy workout bangers to hit the gym"><span>🔥</span> Workout fire</button>
+              <button class="finder-qs-chip" data-prompt="Lo-fi beats for late night coding"><span>🌙</span> Late night coding</button>
+              <button class="finder-qs-chip" data-prompt="80s synthwave for a midnight drive"><span>🚗</span> Midnight drive</button>
+              <button class="finder-qs-chip" data-prompt="Dreamy shoegaze and ambient tracks"><span>✨</span> Dreamy ambient</button>
+              <button class="finder-qs-chip" data-prompt="Indonesian 2000s nostalgic pop ballads"><span>🇮🇩</span> 2000s nostalgia</button>
+              <button class="finder-qs-chip" data-prompt="Epic cinematic music for gaming boss fights"><span>🎮</span> Epic gaming</button>
+              <button class="finder-qs-chip" data-prompt="Heartbreak anthems you can scream to"><span>💔</span> Heartbreak</button>
+            </div>
           </div>
 
           <!-- Submit -->
           <div class="finder-actions">
             <button class="btn btn-primary finder-submit" id="finder-submit">
-              <svg viewBox="0 0 16 16" fill="none" width="14"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              Find Songs
+              <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="finder-submit-icon-default"/></svg>
+              <span class="finder-submit-text">Find Songs</span>
+              <span class="finder-submit-sparkle">✦</span>
             </button>
-            <button class="btn btn-ghost btn-sm finder-clear" id="finder-clear" type="button">Reset</button>
+            <button class="btn btn-ghost btn-sm finder-clear" id="finder-clear" type="button">Clear</button>
           </div>
         </div>
 

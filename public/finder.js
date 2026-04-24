@@ -1,50 +1,96 @@
 /* ─────────────────────────────────────────────────────────────────
-   nrriandika — Song Finder
-   Smart search via Spotify based on mood, genre, era, keyword.
+   nrriandika — AI Song Finder
+   Single natural-language prompt → Claude Haiku → Spotify.
 ───────────────────────────────────────────────────────────────── */
 
 (function Finder() {
   // ─── DOM refs ────────────────────────────────────────────────
   const wrapper     = document.getElementById('finder-wrapper');
-  const keywordIn   = document.getElementById('finder-keyword');
+  const promptIn    = document.getElementById('finder-prompt');
   const counterEl   = document.getElementById('finder-counter-num');
   const submitBtn   = document.getElementById('finder-submit');
   const clearBtn    = document.getElementById('finder-clear');
   const resultsEl   = document.getElementById('finder-results');
+  const quickstart  = document.getElementById('finder-quickstart');
 
-  if (!wrapper || !submitBtn) return;
+  if (!wrapper || !promptIn || !submitBtn) return;
 
   // ─── State ───────────────────────────────────────────────────
-  const selected = { mood: null, genre: null, era: null };
   let currentAudio = null;
   let currentPlayingBtn = null;
 
-  // ─── Chip toggle (mood / genre / era) ────────────────────────
-  wrapper.querySelectorAll('.finder-chips').forEach(group => {
-    const key = group.dataset.finder;
-    group.addEventListener('click', (e) => {
-      const chip = e.target.closest('.finder-chip');
-      if (!chip) return;
+  // ─── Rotating placeholder (typewriter) ───────────────────────
+  const placeholders = [
+    'lagu buat nangis di hujan...',
+    'music for late night coding...',
+    '80s synthwave for night drive...',
+    'chill indie buat coffee shop...',
+    'epic orchestral buat main genshin...',
+    'sad k-pop ballads from 2010s...',
+    'nostalgic Indonesian 2000s pop...',
+    'ambient tracks for meditation...',
+    'heartbreak anthems that hit hard...',
+    'upbeat J-pop for morning run...',
+  ];
 
-      const isActive = chip.classList.contains('finder-chip--active');
-      group.querySelectorAll('.finder-chip').forEach(c => c.classList.remove('finder-chip--active'));
+  let phIndex = 0, charIdx = 0, isDeleting = false, phTimer = null;
 
-      if (!isActive) {
-        chip.classList.add('finder-chip--active');
-        selected[key] = chip.dataset.value;
-      } else {
-        selected[key] = null;
-      }
-    });
+  function typePlaceholder() {
+    if (document.activeElement === promptIn || promptIn.value) {
+      // User interacting → pause
+      phTimer = setTimeout(typePlaceholder, 1500);
+      return;
+    }
+    const full = placeholders[phIndex];
+    const shown = isDeleting ? full.slice(0, charIdx--) : full.slice(0, charIdx++);
+    promptIn.setAttribute('placeholder', shown);
+
+    if (!isDeleting && charIdx === full.length + 1) {
+      isDeleting = true;
+      phTimer = setTimeout(typePlaceholder, 1800); // pause at end
+    } else if (isDeleting && charIdx < 0) {
+      isDeleting = false;
+      charIdx = 0;
+      phIndex = (phIndex + 1) % placeholders.length;
+      phTimer = setTimeout(typePlaceholder, 400);
+    } else {
+      phTimer = setTimeout(typePlaceholder, isDeleting ? 25 : 55);
+    }
+  }
+  typePlaceholder();
+
+  // ─── Quick starter chips ─────────────────────────────────────
+  quickstart?.addEventListener('click', (e) => {
+    const chip = e.target.closest('.finder-qs-chip');
+    if (!chip) return;
+    promptIn.value = chip.dataset.prompt;
+    updateCounter();
+    promptIn.focus();
+    // brief highlight
+    chip.classList.add('finder-qs-chip--pulse');
+    setTimeout(() => chip.classList.remove('finder-qs-chip--pulse'), 400);
   });
 
-  // ─── Reset ───────────────────────────────────────────────────
+  // ─── Character counter ───────────────────────────────────────
+  function updateCounter() {
+    const len = promptIn.value.length;
+    if (counterEl) counterEl.textContent = len;
+    const wrap = counterEl?.parentElement;
+    if (wrap) {
+      wrap.classList.toggle('finder-counter--warn', len > 130);
+      wrap.classList.toggle('finder-counter--max',  len >= 150);
+    }
+  }
+  promptIn.addEventListener('input', updateCounter);
+  updateCounter();
+
+  // ─── Clear ───────────────────────────────────────────────────
   clearBtn?.addEventListener('click', () => {
-    Object.keys(selected).forEach(k => selected[k] = null);
-    wrapper.querySelectorAll('.finder-chip').forEach(c => c.classList.remove('finder-chip--active'));
-    keywordIn.value = '';
+    promptIn.value = '';
     resultsEl.innerHTML = '';
     stopPreview();
+    updateCounter();
+    promptIn.focus();
   });
 
   // ─── Utilities ───────────────────────────────────────────────
@@ -58,22 +104,19 @@
   }
 
   function stopPreview() {
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio = null;
-    }
-    if (currentPlayingBtn) {
-      currentPlayingBtn.classList.remove('playing');
-      currentPlayingBtn = null;
-    }
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    if (currentPlayingBtn) { currentPlayingBtn.classList.remove('playing'); currentPlayingBtn = null; }
   }
 
-  // ─── Render ──────────────────────────────────────────────────
-  function renderLoading() {
+  // ─── Renderers ───────────────────────────────────────────────
+  function renderLoading(userPrompt) {
     resultsEl.innerHTML = `
       <div class="finder-loading">
         <div class="finder-spinner"></div>
-        <span>Searching the cosmos...</span>
+        <div class="finder-loading-text">
+          <span class="finder-loading-title">Curating tracks for you</span>
+          <span class="finder-loading-sub">"${esc(userPrompt)}"</span>
+        </div>
       </div>
     `;
   }
@@ -82,20 +125,36 @@
     resultsEl.innerHTML = `<div class="finder-error">${esc(msg)}</div>`;
   }
 
-  function renderResults(tracks, query) {
+  function renderRateLimit(err) {
+    resultsEl.innerHTML = `
+      <div class="finder-ratelimit">
+        <span class="finder-ratelimit-icon">⏳</span>
+        <div>
+          <div class="finder-ratelimit-title">Daily limit reached</div>
+          <div class="finder-ratelimit-desc">You've used all ${err.limit || 10} searches today. Even our AI needs a coffee break ☕ — come back tomorrow!</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderResults(tracks, query, rateLimit) {
     if (!tracks || tracks.length === 0) {
       resultsEl.innerHTML = `
         <div class="finder-empty">
           <span class="finder-empty-icon">🔭</span>
-          <p>No matches. Try different parameters.</p>
+          <p>No matches. Try rephrasing or be more specific.</p>
         </div>
       `;
       return;
     }
 
+    const rlBadge = rateLimit
+      ? `<span class="finder-ratelimit-badge" title="Searches used today">${rateLimit.used}/${rateLimit.limit}</span>`
+      : '';
+
     resultsEl.innerHTML = `
       <div class="finder-results-header">
-        <span class="finder-results-count">${tracks.length} tracks found</span>
+        <span class="finder-results-count">${tracks.length} tracks ${rlBadge}</span>
         <span class="finder-results-query">${esc(query)}</span>
       </div>
       <div class="finder-grid">
@@ -132,22 +191,14 @@
   function bindPlayButtons() {
     resultsEl.querySelectorAll('.finder-play').forEach(btn => {
       btn.addEventListener('click', () => {
-        const previewUrl = btn.dataset.preview;
-        if (!previewUrl) return;
-
-        // Toggle if same button
-        if (currentPlayingBtn === btn) {
-          stopPreview();
-          return;
-        }
-
+        const url = btn.dataset.preview;
+        if (!url) return;
+        if (currentPlayingBtn === btn) { stopPreview(); return; }
         stopPreview();
-
-        currentAudio = new Audio(previewUrl);
+        currentAudio = new Audio(url);
         currentAudio.volume = 0.7;
-        currentAudio.play().catch(() => { /* silent */ });
+        currentAudio.play().catch(() => {});
         currentAudio.addEventListener('ended', stopPreview);
-
         btn.classList.add('playing');
         currentPlayingBtn = btn;
       });
@@ -156,58 +207,51 @@
 
   // ─── Submit ──────────────────────────────────────────────────
   async function findSongs() {
-    const keyword = keywordIn.value.trim();
-    const params = new URLSearchParams();
-    if (selected.mood)  params.set('mood', selected.mood);
-    if (selected.genre) params.set('genre', selected.genre);
-    if (selected.era)   params.set('era', selected.era);
-    if (keyword)        params.set('keyword', keyword);
+    const prompt = promptIn.value.trim();
 
-    if ([...params].length === 0) {
-      renderError('Please pick at least one parameter (mood, genre, era, or keyword).');
+    if (!prompt) {
+      promptIn.focus();
+      promptIn.classList.add('finder-prompt--shake');
+      setTimeout(() => promptIn.classList.remove('finder-prompt--shake'), 500);
       return;
     }
 
     stopPreview();
-    renderLoading();
+    renderLoading(prompt);
     submitBtn.disabled = true;
+    submitBtn.classList.add('finder-submit--loading');
 
     try {
+      const params = new URLSearchParams({ keyword: prompt });
       const res = await fetch(`/api/find-songs?${params.toString()}`);
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        if (err.error === 'owner_not_connected') {
-          renderError('Song finder is temporarily unavailable.');
-        } else {
-          renderError('Search failed. Please try again.');
-        }
+        if (err.error === 'rate_limit_exceeded') renderRateLimit(err);
+        else if (err.error === 'owner_not_connected') renderError('Song finder is temporarily unavailable.');
+        else if (err.error === 'ai_failed') renderError(err.message || 'AI failed. Try rephrasing.');
+        else renderError(err.message || 'Search failed. Please try again.');
         return;
       }
 
       const data = await res.json();
-      renderResults(data.tracks, data.query);
+      renderResults(data.tracks, data.query, data.rateLimit);
     } catch {
       renderError('Network error. Please try again.');
     } finally {
       submitBtn.disabled = false;
+      submitBtn.classList.remove('finder-submit--loading');
     }
   }
 
   submitBtn.addEventListener('click', findSongs);
-  keywordIn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') findSongs();
-  });
 
-  // Live character counter
-  function updateCounter() {
-    const len = keywordIn.value.length;
-    if (counterEl) counterEl.textContent = len;
-    if (counterEl?.parentElement) {
-      counterEl.parentElement.classList.toggle('finder-counter--warn', len > 130);
-      counterEl.parentElement.classList.toggle('finder-counter--max', len >= 150);
+  promptIn.addEventListener('keydown', (e) => {
+    // Enter submits, Shift+Enter allows newline
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      findSongs();
     }
-  }
-  keywordIn.addEventListener('input', updateCounter);
-  updateCounter();
+  });
 
 })();

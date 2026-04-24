@@ -1794,6 +1794,196 @@ svg { display: block; }
   box-shadow: 0 0 0 3px rgba(124,99,255,0.1);
 }
 
+/* ─── Prompt box (AI-native input) ─────────────────────────── */
+.finder-prompt-box {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px 14px 52px;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.finder-prompt-box:focus-within {
+  border-color: rgba(124,99,255,0.45);
+  box-shadow: 0 0 0 4px rgba(124,99,255,0.08), 0 0 40px rgba(124,99,255,0.1);
+  background: var(--surface);
+}
+
+.finder-prompt-icon {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  animation: promptIconSpin 6s linear infinite;
+}
+
+@keyframes promptIconSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.finder-prompt {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+  min-height: 52px;
+  max-height: 120px;
+}
+
+.finder-prompt::placeholder {
+  color: var(--text-3);
+  opacity: 0.75;
+}
+
+.finder-prompt--shake {
+  animation: promptShake 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+
+@keyframes promptShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.finder-prompt-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.finder-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  opacity: 0.7;
+}
+
+/* ─── Quick starters ───────────────────────────────────────── */
+.finder-quickstart {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.finder-quickstart-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  padding: 7px 0;
+  flex-shrink: 0;
+}
+
+.finder-quickstart-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.finder-qs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.finder-qs-chip:hover {
+  background: rgba(124,99,255,0.1);
+  border-color: rgba(124,99,255,0.3);
+  color: var(--accent-2);
+  transform: translateY(-1px);
+}
+
+.finder-qs-chip span { font-size: 13px; }
+
+.finder-qs-chip--pulse {
+  animation: qsChipPulse 0.4s ease;
+}
+
+@keyframes qsChipPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.08); background: rgba(124,99,255,0.25); }
+  100% { transform: scale(1); }
+}
+
+/* ─── Submit button fancy ──────────────────────────────────── */
+.finder-submit {
+  position: relative;
+  overflow: hidden;
+}
+
+.finder-submit-sparkle {
+  display: inline-block;
+  color: #fbbf24;
+  animation: submitSparkle 2s ease infinite;
+  margin-left: 4px;
+}
+
+@keyframes submitSparkle {
+  0%, 100% { opacity: 0.5; transform: scale(0.8) rotate(0); }
+  50%      { opacity: 1;   transform: scale(1.1) rotate(180deg); }
+}
+
+.finder-submit--loading .finder-submit-text::after {
+  content: '...';
+  animation: loadingDots 1.2s steps(4, end) infinite;
+}
+
+@keyframes loadingDots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ─── Loading (enhanced) ───────────────────────────────────── */
+.finder-loading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.finder-loading-title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.finder-loading-sub {
+  font-size: 13px;
+  color: var(--text-3);
+  font-style: italic;
+  max-width: 320px;
+}
+
 .finder-actions {
   display: flex;
   gap: 8px;
@@ -1900,6 +2090,48 @@ svg { display: block; }
   color: #f87171;
   background: rgba(248,113,113,0.05);
   border-color: rgba(248,113,113,0.2);
+}
+
+.finder-ratelimit {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+
+.finder-ratelimit-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.finder-ratelimit-title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fbbf24;
+  margin-bottom: 2px;
+}
+
+.finder-ratelimit-desc {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.finder-ratelimit-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: rgba(124,99,255,0.12);
+  color: var(--accent-2);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-head);
+  vertical-align: middle;
 }
 
 /* Grid */

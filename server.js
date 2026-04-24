@@ -21,6 +21,7 @@ const querystring   = require('querystring');
 const fs            = require('fs');
 const https         = require('https');
 const Anthropic     = require('@anthropic-ai/sdk');
+const supabase      = require('./supabase');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -325,52 +326,30 @@ app.get('/api/recent-tracks', resolveSpotifyToken, async (req, res) => {
 
 // ─── AI Song Finder ─────────────────────────────────────────────
 
-const MOOD_KEYWORDS = {
-  happy:      'happy',
-  sad:        'sad',
-  chill:      'chill',
-  energetic:  'energetic',
-  romantic:   'love',
-  melancholic:'melancholy',
-};
-
-const ERA_RANGES = {
-  '70s':    '1970-1979',
-  '80s':    '1980-1989',
-  '90s':    '1990-1999',
-  '2000s':  '2000-2009',
-  '2010s':  '2010-2019',
-  'recent': '2020-2025',
-};
-
 // ─── Anthropic (Claude Haiku) client ───────────────────────────
 const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-const FINDER_SYSTEM_PROMPT = `You are a deeply knowledgeable music curator with expertise across genres, eras, and moods worldwide. Your taste is impeccable and you know both mainstream hits and hidden gems.
+const FINDER_SYSTEM_PROMPT = `You are a world-class music curator with deep knowledge across every genre, era, language, and mood. You understand emotional nuance, cultural context, and niche scenes — Indonesian indie, K-pop B-sides, 80s synthwave deep cuts, Japanese city pop, African funk, anything.
 
-When given criteria, you suggest exactly 10 REAL, verifiable songs that genuinely match the vibe. Mix popular favorites with lesser-known tracks (70/30 ratio). Avoid generic top-chart-only picks. Consider emotional nuance — "sad" can range from heartbreak to melancholic introspection.
+Given a natural-language prompt about what someone wants to listen to, you suggest exactly 10 REAL, verifiable songs that genuinely match the vibe. Be creative and specific — don't default to the same top-chart picks. Mix well-known tracks with hidden gems (roughly 60/40). Read between the lines: "lagu buat nangis di hujan" means emotional Indonesian or translatable tracks that pair with rainfall, not just any sad song.
 
-Output ONLY valid JSON in this exact shape, no commentary, no markdown fences:
+Output ONLY valid JSON, no markdown fences, no commentary:
 {"songs":[{"name":"Exact Song Title","artist":"Exact Artist Name"}, ...]}
 
 Rules:
-- Song and artist names must be accurate and searchable on Spotify
-- No duplicates, no covers unless specifically relevant
-- If criteria are contradictory, prioritize the most specific keyword`;
+- Names must be accurate and findable on Spotify
+- Match the user's language/cultural context when relevant
+- No duplicates, no generic filler
+- Prioritize specificity over popularity`;
 
-/** Ask Claude Haiku for 10 song suggestions matching user criteria */
-async function generateSongSuggestions({ mood, genre, era, keyword }) {
+/** Ask Claude Haiku for 10 song suggestions from a single natural-language prompt */
+async function generateSongSuggestions({ keyword }) {
   if (!anthropic) throw new Error('ANTHROPIC_API_KEY not set');
+  if (!keyword) throw new Error('Prompt is required');
 
-  const criteria = [];
-  if (mood)    criteria.push(`- Mood: ${mood}`);
-  if (genre)   criteria.push(`- Genre: ${String(genre).replace(/-/g, ' ')}`);
-  if (era)     criteria.push(`- Era: ${era}`);
-  if (keyword) criteria.push(`- Vibe/keyword: "${String(keyword).trim().slice(0, 150)}"`);
-
-  const userMessage = `Recommend 10 songs matching:\n${criteria.join('\n')}`;
+  const userPrompt = String(keyword).trim().slice(0, 150);
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
@@ -379,7 +358,7 @@ async function generateSongSuggestions({ mood, genre, era, keyword }) {
     system: [
       { type: 'text', text: FINDER_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
     ],
-    messages: [{ role: 'user', content: userMessage }],
+    messages: [{ role: 'user', content: `Find songs for: "${userPrompt}"` }],
   });
 
   const content = response.content?.[0]?.text || '';
@@ -424,16 +403,65 @@ async function spotifyTrackLookup(token, name, artist) {
   }
 }
 
-/** AI-powered song finder: Claude Haiku → Spotify enrichment */
-app.get('/api/find-songs', async (req, res) => {
+/** Rate limit middleware — daily per-IP + per-endpoint counter in Supabase */
+function rateLimit(endpoint, maxPerDay) {
+  return async function (req, res, next) {
+    if (!supabase) return next(); // skip if DB down, don't block users
+
+    // Resolve client IP (Vercel sets x-forwarded-for; trust proxy is enabled)
+    const ip =
+      req.ip ||
+      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+      req.socket?.remoteAddress ||
+      'unknown';
+
+    const day = new Date().toISOString().slice(0, 10); // "2026-04-24"
+
+    try {
+      const { data: existing } = await supabase
+        .from('rate_limits')
+        .select('count')
+        .eq('ip', ip)
+        .eq('endpoint', endpoint)
+        .eq('day', day)
+        .maybeSingle();
+
+      const used = existing?.count || 0;
+
+      if (used >= maxPerDay) {
+        return res.status(429).json({
+          error:   'rate_limit_exceeded',
+          message: `You've used all ${maxPerDay} requests for today. Come back tomorrow!`,
+          limit:   maxPerDay,
+          used,
+          resetAt: `${day}T23:59:59Z`,
+        });
+      }
+
+      await supabase
+        .from('rate_limits')
+        .upsert({ ip, endpoint, day, count: used + 1 }, { onConflict: 'ip,endpoint,day' });
+
+      res.setHeader('X-RateLimit-Limit', maxPerDay);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxPerDay - used - 1));
+      req.rateLimit = { used: used + 1, limit: maxPerDay };
+      next();
+    } catch (err) {
+      console.error('rate limit error:', err.message);
+      next(); // fail-open: don't block on DB error
+    }
+  };
+}
+
+/** AI-powered song finder: Claude Haiku → Spotify enrichment — 10 req/day per IP */
+app.get('/api/find-songs', rateLimit('find-songs', 10), async (req, res) => {
   try {
-    let { mood, genre, era, keyword } = req.query;
+    const keyword = req.query.keyword
+      ? String(req.query.keyword).trim().slice(0, 150)
+      : '';
 
-    // Enforce keyword length limit (also validated on frontend)
-    if (keyword) keyword = String(keyword).trim().slice(0, 150);
-
-    if (!mood && !genre && !era && !keyword) {
-      return res.status(400).json({ error: 'no_parameters', message: 'Pick at least one parameter' });
+    if (!keyword) {
+      return res.status(400).json({ error: 'no_prompt', message: 'Please describe what you want to hear' });
     }
 
     // Get owner token (visitor doesn't need to login)
@@ -442,17 +470,17 @@ app.get('/api/find-songs', async (req, res) => {
       return res.status(503).json({ error: 'owner_not_connected', message: 'Owner Spotify not configured' });
     }
 
-    // Step 1: Ask Groq for song suggestions
+    // Step 1: Ask Claude Haiku for song suggestions
     let suggestions;
     try {
-      suggestions = await generateSongSuggestions({ mood, genre, era, keyword });
+      suggestions = await generateSongSuggestions({ keyword });
     } catch (err) {
-      console.error('Groq error:', err.response?.data || err.message);
+      console.error('Anthropic error:', err.response?.data || err.message);
       return res.status(502).json({ error: 'ai_failed', message: 'AI suggestion failed. ' + err.message });
     }
 
     if (!suggestions || suggestions.length === 0) {
-      return res.json({ query: 'AI suggestions', tracks: [] });
+      return res.json({ query: keyword, tracks: [], rateLimit: req.rateLimit });
     }
 
     // Step 2: Enrich each suggestion with Spotify data (parallel)
@@ -460,10 +488,7 @@ app.get('/api/find-songs', async (req, res) => {
       suggestions.map(s => spotifyTrackLookup(token, s.name, s.artist))
     );
 
-    const tracks = enriched.filter(Boolean);
-    const query = [mood, genre, era, keyword].filter(Boolean).join(' · ');
-
-    res.json({ query, tracks });
+    res.json({ query: keyword, tracks: enriched.filter(Boolean), rateLimit: req.rateLimit });
   } catch (err) {
     console.error('find-songs error:', err.response?.status, err.response?.data || err.message);
     res.status(500).json({
@@ -474,7 +499,6 @@ app.get('/api/find-songs', async (req, res) => {
 });
 
 // ─── Recommendations (Supabase) ─────────────────────────────────
-const supabase = require('./supabase');
 
 /** Guard — return 503 if Supabase is not configured */
 function requireSupabase(_req, res, next) {
