@@ -325,12 +325,12 @@ app.get('/api/recent-tracks', resolveSpotifyToken, async (req, res) => {
 // ─── AI Song Finder ─────────────────────────────────────────────
 
 const MOOD_KEYWORDS = {
-  happy:      'happy upbeat feel-good',
-  sad:        'sad melancholic heartbreak',
-  chill:      'chill lofi relaxing ambient',
-  energetic:  'energetic pumped workout',
-  romantic:   'romantic love',
-  melancholic:'reflective introspective',
+  happy:      'happy',
+  sad:        'sad',
+  chill:      'chill',
+  energetic:  'energetic',
+  romantic:   'love',
+  melancholic:'melancholy',
 };
 
 const ERA_RANGES = {
@@ -347,11 +347,12 @@ app.get('/api/find-songs', async (req, res) => {
   try {
     const { mood, genre, era, keyword } = req.query;
 
-    // Build Spotify search query
+    // Build Spotify search query — treat everything as free text except year
+    // (strict genre: filter returns very few results when combined with text)
     const parts = [];
     if (mood && MOOD_KEYWORDS[mood]) parts.push(MOOD_KEYWORDS[mood]);
+    if (genre)                       parts.push(String(genre).replace(/-/g, ' '));
     if (keyword)                     parts.push(String(keyword).trim().slice(0, 60));
-    if (genre)                       parts.push(`genre:${genre}`);
     if (era && ERA_RANGES[era])      parts.push(`year:${ERA_RANGES[era]}`);
 
     if (parts.length === 0) {
