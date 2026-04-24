@@ -363,7 +363,6 @@ async function generateSongSuggestions({ keyword, deep = false }) {
     model,
     max_tokens: 1200,
     temperature: 1.0,
-    top_p: 0.95,
     system: [
       { type: 'text', text: FINDER_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
     ],
