@@ -331,34 +331,48 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-const FINDER_SYSTEM_PROMPT = `You are a world-class music curator with deep knowledge across every genre, era, language, and mood. You understand emotional nuance, cultural context, and niche scenes — Indonesian indie, K-pop B-sides, 80s synthwave deep cuts, Japanese city pop, African funk, anything.
+const FINDER_SYSTEM_PROMPT = `You are a world-class music curator with encyclopedic knowledge across every genre, era, language, and scene — Indonesian indie, K-pop B-sides, 80s synthwave deep cuts, Japanese city pop, bossa nova, African funk, bedroom pop, hyperpop, post-rock, whatever fits.
 
-Given a natural-language prompt about what someone wants to listen to, you suggest exactly 10 REAL, verifiable songs that genuinely match the vibe. Be creative and specific — don't default to the same top-chart picks. Mix well-known tracks with hidden gems (roughly 60/40). Read between the lines: "lagu buat nangis di hujan" means emotional Indonesian or translatable tracks that pair with rainfall, not just any sad song.
+Given a natural-language prompt about what someone wants to listen to, suggest exactly 15 REAL, verifiable songs that genuinely match the vibe.
+
+CRITICAL DIVERSITY RULES:
+- Avoid obvious top-10 picks — no "Let Her Go" for every sad prompt, no "Blinding Lights" for every upbeat prompt
+- Mix across popularity tiers: roughly 30% well-known / 40% moderately known / 30% genuine hidden gems
+- Vary artists — no repeat artist unless absolutely essential to the vibe
+- Vary eras, languages, countries when the prompt allows
+- Read between the lines: "lagu nangis di hujan" means emotional Indonesian ballads that pair with rain, not just any sad song. "night drive" means synthwave/dream pop/lo-fi with motion, not chart hits.
+- Be a CURATOR, not a chart scraper. Surprise the listener with something they haven't heard.
 
 Output ONLY valid JSON, no markdown fences, no commentary:
 {"songs":[{"name":"Exact Song Title","artist":"Exact Artist Name"}, ...]}
 
-Rules:
 - Names must be accurate and findable on Spotify
 - Match the user's language/cultural context when relevant
-- No duplicates, no generic filler
-- Prioritize specificity over popularity`;
+- No duplicates`;
 
-/** Ask Claude Haiku for 10 song suggestions from a single natural-language prompt */
+/** Ask Claude Haiku for song suggestions from a single natural-language prompt */
 async function generateSongSuggestions({ keyword }) {
   if (!anthropic) throw new Error('ANTHROPIC_API_KEY not set');
   if (!keyword) throw new Error('Prompt is required');
 
   const userPrompt = String(keyword).trim().slice(0, 150);
 
+  // Add randomness: current timestamp + random bytes make each call unique
+  // so the model doesn't fall back to the same deterministic picks
+  const nonce = `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`;
+
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    temperature: 0.9,
+    max_tokens: 1200,
+    temperature: 1.0,
+    top_p: 0.95,
     system: [
       { type: 'text', text: FINDER_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
     ],
-    messages: [{ role: 'user', content: `Find songs for: "${userPrompt}"` }],
+    messages: [{
+      role: 'user',
+      content: `Find songs for: "${userPrompt}"\n\n(Session ${nonce} — surprise me with tracks I might not have heard before, avoid predictable picks.)`
+    }],
   });
 
   const content = response.content?.[0]?.text || '';
@@ -373,7 +387,11 @@ async function generateSongSuggestions({ keyword }) {
   }
 
   const list = Array.isArray(parsed) ? parsed : (parsed.songs || parsed.tracks || parsed.recommendations || []);
-  return list.filter(x => x && x.name && x.artist).slice(0, 10);
+  const valid = list.filter(x => x && x.name && x.artist);
+
+  // Shuffle then take 10 — different selection each time even from same 15
+  const shuffled = valid.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 10);
 }
 
 /** Search a single track on Spotify — returns first match with full metadata */
