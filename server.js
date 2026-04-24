@@ -322,6 +322,73 @@ app.get('/api/recent-tracks', resolveSpotifyToken, async (req, res) => {
   }
 });
 
+// ─── AI Song Finder ─────────────────────────────────────────────
+
+const MOOD_KEYWORDS = {
+  happy:      'happy upbeat feel-good',
+  sad:        'sad melancholic heartbreak',
+  chill:      'chill lofi relaxing ambient',
+  energetic:  'energetic pumped workout',
+  romantic:   'romantic love',
+  melancholic:'reflective introspective',
+};
+
+const ERA_RANGES = {
+  '70s':    '1970-1979',
+  '80s':    '1980-1989',
+  '90s':    '1990-1999',
+  '2000s':  '2000-2009',
+  '2010s':  '2010-2019',
+  'recent': '2020-2025',
+};
+
+/** Find songs by parameters — uses owner's token so it works without login */
+app.get('/api/find-songs', async (req, res) => {
+  const { mood, genre, era, keyword } = req.query;
+
+  // Build Spotify search query
+  const parts = [];
+  if (mood && MOOD_KEYWORDS[mood]) parts.push(MOOD_KEYWORDS[mood]);
+  if (keyword)                     parts.push(keyword.trim().slice(0, 60));
+  if (genre)                       parts.push(`genre:"${genre}"`);
+  if (era && ERA_RANGES[era])      parts.push(`year:${ERA_RANGES[era]}`);
+
+  if (parts.length === 0) {
+    return res.status(400).json({ error: 'no_parameters', message: 'Pick at least one parameter' });
+  }
+
+  const query = parts.join(' ');
+
+  // Get owner token (visitor doesn't need to login)
+  const token = await getOwnerToken();
+  if (!token) {
+    return res.status(503).json({ error: 'owner_not_connected', message: 'Owner Spotify not configured' });
+  }
+
+  try {
+    const { data } = await axios.get(`${SPOTIFY_API_BASE}/search`, {
+      params: { q: query, type: 'track', limit: 12, market: 'ID' },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const tracks = (data.tracks?.items || []).map(t => ({
+      id:       t.id,
+      name:     t.name,
+      artist:   t.artists.map(a => a.name).join(', '),
+      album:    t.album.name,
+      image:    t.album.images[0]?.url || null,
+      preview:  t.preview_url,
+      url:      t.external_urls?.spotify || null,
+      duration: t.duration_ms,
+    }));
+
+    res.json({ query, tracks });
+  } catch (err) {
+    console.error('find-songs error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'search_failed' });
+  }
+});
+
 // ─── Recommendations (Supabase) ─────────────────────────────────
 const supabase = require('./supabase');
 

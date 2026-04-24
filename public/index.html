@@ -416,6 +416,82 @@
 
       </div>
 
+      <!-- ─── Song Finder ─────────────────────────────────────── -->
+      <div class="finder-wrapper" id="finder-wrapper">
+        <div class="finder-header">
+          <div>
+            <h3 class="finder-title">
+              <span class="finder-title-icon">✦</span>
+              Song Finder
+            </h3>
+            <p class="finder-subtitle">Tell me the vibe, I'll find the tracks.</p>
+          </div>
+        </div>
+
+        <div class="finder-form">
+          <!-- Mood -->
+          <div class="finder-group">
+            <label class="finder-label">Mood</label>
+            <div class="finder-chips" data-finder="mood">
+              <button class="finder-chip" data-value="happy"><span>🎉</span> Happy</button>
+              <button class="finder-chip" data-value="sad"><span>😔</span> Sad</button>
+              <button class="finder-chip" data-value="chill"><span>🌙</span> Chill</button>
+              <button class="finder-chip" data-value="energetic"><span>⚡</span> Energetic</button>
+              <button class="finder-chip" data-value="romantic"><span>💜</span> Romantic</button>
+              <button class="finder-chip" data-value="melancholic"><span>🍂</span> Melancholic</button>
+            </div>
+          </div>
+
+          <!-- Genre -->
+          <div class="finder-group">
+            <label class="finder-label">Genre</label>
+            <div class="finder-chips" data-finder="genre">
+              <button class="finder-chip" data-value="pop">Pop</button>
+              <button class="finder-chip" data-value="rock">Rock</button>
+              <button class="finder-chip" data-value="indie">Indie</button>
+              <button class="finder-chip" data-value="hip-hop">Hip-Hop</button>
+              <button class="finder-chip" data-value="r-n-b">R&amp;B</button>
+              <button class="finder-chip" data-value="electronic">Electronic</button>
+              <button class="finder-chip" data-value="jazz">Jazz</button>
+              <button class="finder-chip" data-value="classical">Classical</button>
+              <button class="finder-chip" data-value="lo-fi">Lo-fi</button>
+              <button class="finder-chip" data-value="k-pop">K-Pop</button>
+            </div>
+          </div>
+
+          <!-- Era -->
+          <div class="finder-group">
+            <label class="finder-label">Era</label>
+            <div class="finder-chips" data-finder="era">
+              <button class="finder-chip" data-value="70s">70s</button>
+              <button class="finder-chip" data-value="80s">80s</button>
+              <button class="finder-chip" data-value="90s">90s</button>
+              <button class="finder-chip" data-value="2000s">2000s</button>
+              <button class="finder-chip" data-value="2010s">2010s</button>
+              <button class="finder-chip" data-value="recent">Recent</button>
+            </div>
+          </div>
+
+          <!-- Keyword -->
+          <div class="finder-group">
+            <label class="finder-label">Keyword <span class="finder-optional">(optional)</span></label>
+            <input type="text" id="finder-keyword" class="finder-input" placeholder="e.g. night drive, summer, rainy day..." maxlength="60" />
+          </div>
+
+          <!-- Submit -->
+          <div class="finder-actions">
+            <button class="btn btn-primary finder-submit" id="finder-submit">
+              <svg viewBox="0 0 16 16" fill="none" width="14"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Find Songs
+            </button>
+            <button class="btn btn-ghost btn-sm finder-clear" id="finder-clear" type="button">Reset</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="finder-results" id="finder-results"></div>
+      </div>
+
       <!-- ─── Recommendations ──────────────────────────────────── -->
       <div class="recs-wrapper" id="recs-wrapper">
         <div class="recs-header">
@@ -535,8 +611,8 @@
               <span class="gm-info-value">60</span>
             </div>
             <div class="gm-info-item">
-              <span class="gm-info-label">Main</span>
-              <span class="gm-info-value">Hu Tao</span>
+              <span class="gm-info-label">Name</span>
+              <span class="gm-info-value">Erza</span>
             </div>
           </div>
           <div class="gm-note">
@@ -581,7 +657,7 @@
           <div class="gm-note">
             <p>Single player game, but feel free to share your builds and discuss theories with me!</p>
           </div>
-          <a href="https://steamcommunity.com/" target="_blank" rel="noopener" class="btn btn-primary gm-external">
+          <a href="https://steamcommunity.com/profiles/76561198363945937/" target="_blank" rel="noopener" class="btn btn-primary gm-external">
             <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M6 10L14 2M14 2H10M14 2v4M14 8v4.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-9A1.5 1.5 0 013.5 2H8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Steam Profile
           </a>
@@ -601,8 +677,8 @@
         <div class="gm-body">
           <div class="gm-info-grid">
             <div class="gm-info-item">
-              <span class="gm-info-label">Player ID</span>
-              <span class="gm-info-value gm-copyable" data-copy="nrriandika">nrriandika
+              <span class="gm-info-label">ID</span>
+              <span class="gm-info-value gm-copyable" data-copy="nrriandika">4009747177
                 <svg viewBox="0 0 16 16" fill="none" width="12"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
               </span>
             </div>
@@ -611,8 +687,8 @@
               <span class="gm-info-value">Asia</span>
             </div>
             <div class="gm-info-item">
-              <span class="gm-info-label">Main</span>
-              <span class="gm-info-value">Laevatain</span>
+              <span class="gm-info-label">Name</span>
+              <span class="gm-info-value">Alsa</span>
             </div>
             <div class="gm-info-item">
               <span class="gm-info-label">Platform</span>
@@ -620,7 +696,7 @@
             </div>
           </div>
           <div class="gm-note">
-            <p>Always looking for efficient factory layouts. Add me and let's share blueprints!</p>
+            <p>Yooo Factory must grow!!!</p>
           </div>
           <button class="btn btn-primary gm-copy-uid" data-copy="nrriandika">
             <svg viewBox="0 0 16 16" fill="none" width="14"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 014.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
@@ -647,6 +723,7 @@
 
   <script src="script.js"></script>
   <script src="spotify.js"></script>
+  <script src="finder.js"></script>
   <script src="recommendations.js"></script>
 </body>
 </html>
