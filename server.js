@@ -332,9 +332,17 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
-const gemini = process.env.GEMINI_API_KEY
-  ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
-  : null;
+// Multiple Gemini keys support (comma-separated in GEMINI_API_KEYS,
+// or single GEMINI_API_KEY as fallback). Auto-rotates on 429 errors.
+const GEMINI_KEYS = (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '')
+  .split(',')
+  .map(k => k.trim())
+  .filter(Boolean);
+
+// In-memory cooldown for exhausted keys (per serverless instance).
+// Map: key → timestamp until which we skip it.
+const exhaustedUntil = new Map();
+const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
 const FINDER_SYSTEM_PROMPT = `You are a world-class music curator with encyclopedic knowledge across every genre, era, language, and scene — Indonesian indie, K-pop B-sides, 80s synthwave deep cuts, Japanese city pop, bossa nova, African funk, bedroom pop, hyperpop, post-rock, whatever fits.
 
@@ -386,23 +394,62 @@ async function suggestWithHaiku(userPrompt, nonce) {
   return parseSongList(response.content?.[0]?.text || '');
 }
 
-/** Gemini 2.5 Flash with Google Search grounding — for Deep Search
- *  Understands current slang, memes, and cultural context via live search. */
+/** Is this key currently in cooldown (hit rate limit recently)? */
+function isExhausted(key) {
+  const until = exhaustedUntil.get(key);
+  if (!until) return false;
+  if (Date.now() >= until) { exhaustedUntil.delete(key); return false; }
+  return true;
+}
+
+/** Mark key as exhausted for COOLDOWN_MS (skip it temporarily) */
+function markExhausted(key) {
+  exhaustedUntil.set(key, Date.now() + COOLDOWN_MS);
+}
+
+/** Gemini 2.5 Flash with Google Search grounding — for Deep Search.
+ *  Auto-rotates through multiple API keys on 429 errors. */
 async function suggestWithGemini(userPrompt, nonce) {
-  if (!gemini) throw new Error('GEMINI_API_KEY not set');
+  if (GEMINI_KEYS.length === 0) throw new Error('No Gemini API keys configured');
 
-  const response = await gemini.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: `Find songs for: "${userPrompt}"\n\n(Session ${nonce}. If the prompt contains slang, memes, or cultural references — especially Indonesian, SEA, K-pop, or other non-English context — search the web to understand it before recommending.)`,
-    config: {
-      systemInstruction: FINDER_SYSTEM_PROMPT + '\n\nIMPORTANT: Output must be pure JSON only. No markdown fences, no commentary, no explanations. Start with { and end with }.',
-      temperature: 1.0,
-      tools: [{ googleSearch: {} }],
-    },
-  });
+  const availableKeys = GEMINI_KEYS.filter(k => !isExhausted(k));
+  const keysToTry = availableKeys.length > 0 ? availableKeys : GEMINI_KEYS;
 
-  const text = response.text || response.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-  return parseSongList(text);
+  let lastErr;
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[i];
+    try {
+      const client = new GoogleGenAI({ apiKey: key });
+      const response = await client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Find songs for: "${userPrompt}"\n\n(Session ${nonce}. If the prompt contains slang, memes, or cultural references — especially Indonesian, SEA, K-pop, or other non-English context — search the web to understand it before recommending.)`,
+        config: {
+          systemInstruction: FINDER_SYSTEM_PROMPT + '\n\nIMPORTANT: Output must be pure JSON only. No markdown fences, no commentary, no explanations. Start with { and end with }.',
+          temperature: 1.0,
+          tools: [{ googleSearch: {} }],
+        },
+      });
+
+      const text = response.text || response.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+      return parseSongList(text);
+
+    } catch (err) {
+      lastErr = err;
+      const msg = err.message || String(err);
+      const status = err.status || err.code;
+      const isRateLimit = status === 429 || /quota|rate limit|exceeded|resource_exhausted/i.test(msg);
+
+      if (isRateLimit) {
+        markExhausted(key);
+        console.warn(`Gemini key #${i + 1} exhausted — trying next`);
+        continue; // try next key
+      }
+      // Non-rate-limit error: bail out
+      throw err;
+    }
+  }
+
+  throw new Error(`All ${keysToTry.length} Gemini keys hit rate limit. ${lastErr?.message || ''}`);
 }
 
 /** Ask AI for song suggestions. `deep=true` uses Gemini with Google Search. */
