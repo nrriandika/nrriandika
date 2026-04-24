@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nrriandika — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ─── Space Background Decorations ────────────────────────── -->
+  <div class="space-planet space-planet--1">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-planet space-planet--2">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-orbit space-orbit--1"></div>
+  <div class="space-orbit space-orbit--2"></div>
+  <div class="space-orbit space-orbit--3"></div>
+
+  <!-- ─── Navigation ─────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <div class="nav-logo">
+      <span class="logo-dot"></span>
+      <span>nrriandika</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#work" class="nav-link">Work</a></li>
+      <li><a href="#game" class="nav-link">Game</a></li>
+      <li><a href="#music" class="nav-link">Music</a></li>
+    </ul>
+    <div class="nav-indicator"></div>
+  </nav>
+
+  <!-- ─── Hero ────────────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Available for work</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="line" data-delay="0">Hello, I'm</span>
+        <span class="line accent" data-delay="100">nrriandika</span>
+      </h1>
+      <p class="hero-sub">
+        Developer · Gamer · Music Enthusiast
+      </p>
+      <div class="hero-cta">
+        <a href="#work" class="btn btn-primary">View Work</a>
+        <a href="#music" class="btn btn-ghost">Now Playing</a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  <!-- ─── Work ─────────────────────────────────────────────────── -->
+  <section class="section" id="work">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">01 — Work</span>
+        <h2 class="section-title">My Projects</h2>
+        <p class="section-desc">Things I've built, shipped, and broken (then fixed).</p>
+      </div>
+
+      <div class="work-grid">
+
+        <article class="work-card work-card--featured" data-index="0">
+          <div class="work-card-media">
+            <div class="work-card-placeholder" style="--c1:#6C63FF;--c2:#a78bfa">
+              <svg viewBox="0 0 60 40" fill="none"><rect x="8" y="8" width="20" height="14" rx="2" fill="white" fill-opacity=".15"/><rect x="32" y="8" width="20" height="14" rx="2" fill="white" fill-opacity=".15"/><rect x="8" y="26" width="44" height="6" rx="2" fill="white" fill-opacity=".1"/></svg>
+            </div>
+            <div class="work-card-tag">Featured</div>
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-meta">
+              <span class="tag">Web App</span>
+              <span class="tag">2021</span>
+            </div>
+            <h3 class="work-card-title">Sitaswil</h3>
+            <p class="work-card-desc">A web-based system for managing territorial boundary data, ranging from district-level boundaries to the national level. It provides an integrated platform for systematic monitoring and updating of boundary information.</p>
+            <div class="work-card-stack">
+              <span class="stack-pill">PostgreSQL</span>
+              <span class="stack-pill">PHP</span>
+              <span class="stack-pill">Laravel</span>
+            </div>
+            <div class="work-card-links">
+              <a href="#" class="work-link">Live <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></a>
+              <a href="#" class="work-link work-link--ghost">GitHub</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work-card" data-index="1">
+          <div class="work-card-media">
+            <div class="work-card-placeholder" style="--c1:#0ea5e9;--c2:#38bdf8">
+              <svg viewBox="0 0 60 40" fill="none"><circle cx="30" cy="20" r="12" stroke="white" stroke-opacity=".2" stroke-width="2"/><path d="M18 20h24M30 8v24" stroke="white" stroke-opacity=".3" stroke-width="2"/></svg>
+            </div>
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-meta">
+              <span class="tag">Web App</span>
+              <span class="tag">2023</span>
+            </div>
+            <h3 class="work-card-title">Internet of Things</h3>
+            <p class="work-card-desc">A web platform that integrates plantation IoT systems, collecting data from sensors measuring parameters such as rainfall, groundwater level, and canal water level. It enables data visualization and analysis to support decision-making.</p>
+            <div class="work-card-stack">
+              <span class="stack-pill">SQL Server</span>
+              <span class="stack-pill">C# & JS</span>
+              <span class="stack-pill">ASP.net</span>
+            </div>
+            <div class="work-card-links">
+              <a href="#" class="work-link">Live <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></a>
+              <a href="#" class="work-link work-link--ghost">GitHub</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work-card" data-index="2">
+          <div class="work-card-media">
+            <div class="work-card-placeholder" style="--c1:#10b981;--c2:#34d399">
+              <svg viewBox="0 0 60 40" fill="none"><path d="M10 30 L20 20 L30 25 L40 15 L50 18" stroke="white" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/><path d="M10 32 L20 22 L30 27 L40 17 L50 20" stroke="white" stroke-opacity=".15" stroke-width="8" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-meta">
+              <span class="tag">API</span>
+              <span class="tag">2025</span>
+            </div>
+            <h3 class="work-card-title">Early Warning System</h3>
+            <p class="work-card-desc">An API-based system designed to provide real-time alerts for fire hotspots. Notifications are automatically sent via email and mobile, enabling rapid response and improved safety in fire-prone areas.</p>
+            <div class="work-card-stack">
+              <span class="stack-pill">SDE</span>
+              <span class="stack-pill">Python</span>
+              <span class="stack-pill">ArcPy</span>
+            </div>
+            <div class="work-card-links">
+              <a href="#" class="work-link">Live <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></a>
+              <a href="#" class="work-link work-link--ghost">GitHub</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="work-card" data-index="3">
+          <div class="work-card-media">
+            <div class="work-card-placeholder" style="--c1:#f59e0b;--c2:#fbbf24">
+              <svg viewBox="0 0 60 40" fill="none"><rect x="14" y="10" width="32" height="20" rx="3" stroke="white" stroke-opacity=".3" stroke-width="2"/><path d="M22 20h16M30 14v12" stroke="white" stroke-opacity=".4" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="work-card-body">
+            <div class="work-card-meta">
+              <span class="tag">API</span>
+              <span class="tag">2026</span>
+            </div>
+            <h3 class="work-card-title">Automation Drone Detection</h3>
+            <p class="work-card-desc">An API system that retrieves and processes data from drones used for field monitoring. It detects fire hotspots and suspicious objects, supporting efficient surveillance and security operations.</p>
+            <div class="work-card-stack">
+              <span class="stack-pill">SDE</span>
+              <span class="stack-pill">Python</span>
+              <span class="stack-pill">ArcPy</span>
+            </div>
+            <div class="work-card-links">
+              <a href="#" class="work-link">Live <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></a>
+              <a href="#" class="work-link work-link--ghost">GitHub</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Game ─────────────────────────────────────────────────── -->
+  <section class="section" id="game">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">02 — Game</span>
+        <h2 class="section-title">Currently Playing</h2>
+        <p class="section-desc">Worlds I escape to when the code refuses to compile.</p>
+      </div>
+
+      <div class="game-grid">
+
+        <!-- Genshin Impact -->
+        <article class="game-card" data-game="genshin">
+          <div class="game-card-bg" style="--g1:#1a1033;--g2:#2d1b69;--g3:#1e3a5f">
+            <img src="src/img/hu-tao-birthday-art-genshinimpact.jpg" alt="Genshin Impact" class="game-card-img" />
+            <div class="game-bg-orb" style="--x:20%;--y:30%;--c:#7c3aed44;--s:200px"></div>
+            <div class="game-bg-orb" style="--x:70%;--y:60%;--c:#0ea5e944;--s:160px"></div>
+            <div class="game-stars"></div>
+          </div>
+          <div class="game-card-content">
+            <div class="game-icon" style="background: linear-gradient(135deg, #7c3aed, #2563eb)">
+              <svg viewBox="0 0 40 40" fill="none" width="24"><path d="M20 4L8 16l4 4-4 4 12 12 12-12-4-4 4-4L20 4z" fill="white" fill-opacity=".9"/><circle cx="20" cy="20" r="4" fill="white"/></svg>
+            </div>
+            <div class="game-label">
+              <span class="game-status">
+                <span class="status-dot status-dot--active"></span>
+                Active
+              </span>
+              <span class="game-genre">Open World RPG</span>
+            </div>
+          </div>
+          <div class="game-card-footer">
+            <h3 class="game-title">Genshin Impact</h3>
+            <p class="game-desc">Gacha collector, world explorer, lore chaser. Currently farming resin in Natlan.</p>
+            <div class="game-tags">
+              <span class="game-tag">Hoyoverse</span>
+              <span class="game-tag">Action RPG</span>
+              <span class="game-tag">Co-op</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Hogwarts Legacy -->
+        <article class="game-card" data-game="hogwarts">
+          <div class="game-card-bg" style="--g1:#1a0f2e;--g2:#2d1a0e;--g3:#0f1a1a">
+            <img src="src/img/HogwartsLegacyPeruharrypotter_900x.jpg" alt="Hogwarts Legacy" class="game-card-img" />
+            <div class="game-bg-orb" style="--x:30%;--y:40%;--c:#92400e44;--s:180px"></div>
+            <div class="game-bg-orb" style="--x:75%;--y:20%;--c:#7c3aed55;--s:120px"></div>
+            <div class="game-particles"></div>
+          </div>
+          <div class="game-card-content">
+            <div class="game-icon" style="background: linear-gradient(135deg, #92400e, #7c3aed)">
+              <svg viewBox="0 0 40 40" fill="none" width="24"><path d="M20 6 C20 6 10 14 10 22 C10 28 14.5 32 20 32 C25.5 32 30 28 30 22 C30 14 20 6 20 6Z" fill="white" fill-opacity=".8"/><path d="M15 20 L20 10 L25 20" stroke="white" stroke-opacity=".6" stroke-width="1.5"/><circle cx="20" cy="24" r="3" fill="white" fill-opacity=".9"/></svg>
+            </div>
+            <div class="game-label">
+              <span class="game-status">
+                <span class="status-dot status-dot--idle"></span>
+                Casual
+              </span>
+              <span class="game-genre">Action RPG</span>
+            </div>
+          </div>
+          <div class="game-card-footer">
+            <h3 class="game-title">Hogwarts Legacy</h3>
+            <p class="game-desc">Exploring the wizarding world, mastering spells, and uncovering ancient magic.</p>
+            <div class="game-tags">
+              <span class="game-tag">Avalanche</span>
+              <span class="game-tag">Open World RPG</span>
+              <span class="game-tag">Single Player</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Arknights Endfield -->
+        <article class="game-card" data-game="endfield">
+          <div class="game-card-bg" style="--g1:#041a1a;--g2:#0a2a2a;--g3:#0d1f33">
+            <img src="src/img/484345201_1220170502791610_7905123984809730802_n.jpg" alt="Arknights Endfield" class="game-card-img" />
+            <div class="game-bg-orb" style="--x:60%;--y:50%;--c:#0891b244;--s:200px"></div>
+            <div class="game-bg-orb" style="--x:15%;--y:25%;--c:#10b98133;--s:140px"></div>
+            <div class="game-circuit"></div>
+          </div>
+          <div class="game-card-content">
+            <div class="game-icon" style="background: linear-gradient(135deg, #0891b2, #10b981)">
+              <svg viewBox="0 0 40 40" fill="none" width="24"><path d="M8 32L20 8L32 32H8Z" stroke="white" stroke-opacity=".9" stroke-width="2" fill="none"/><path d="M13 26H27" stroke="white" stroke-opacity=".6" stroke-width="1.5" stroke-linecap="round"/><circle cx="20" cy="22" r="3" fill="white" fill-opacity=".8"/></svg>
+            </div>
+            <div class="game-label">
+              <span class="game-status">
+                <span class="status-dot status-dot--active"></span>
+                Active
+              </span>
+              <span class="game-genre">Strategy RPG</span>
+            </div>
+          </div>
+          <div class="game-card-footer">
+            <h3 class="game-title">Arknights: Endfield</h3>
+            <p class="game-desc">Hypergryph's 3D action RPG set in the Arknights universe. Factory management meets tactical combat.</p>
+            <div class="game-tags">
+              <span class="game-tag">Hypergryph</span>
+              <span class="game-tag">RPG Factory</span>
+              <span class="game-tag">Single Player</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Music ─────────────────────────────────────────────────── -->
+  <section class="section" id="music">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">03 — Music</span>
+        <h2 class="section-title">Sound Palette</h2>
+        <p class="section-desc">What's in my ears right now.</p>
+      </div>
+
+      <!-- Spotify Auth State: not connected -->
+      <div class="spotify-wrapper" id="spotify-wrapper">
+
+        <!-- Not connected state -->
+        <div class="spotify-auth" id="spotify-auth">
+          <div class="spotify-auth-icon">
+            <svg viewBox="0 0 168 168" fill="none" width="64">
+              <circle cx="84" cy="84" r="84" fill="#1DB954"/>
+              <path d="M124 112c-2 0-3-.7-4.5-1.7-12.3-7.5-27.8-11.5-44.5-11.5-9.2 0-18.5 1.3-27 3.5-1.7.5-4 1.5-5.5 1.5-3.8 0-6.5-3-6.5-6.8 0-4 2.5-6.3 5.5-7 10-2.5 20.8-4 33.5-4 19.5 0 37.5 4.5 52 13.5 2.5 1.5 4 3.5 4 6.8 0 3.8-2.8 6.7-7 6.7zm7-29.5c-2.3 0-4-1-5.5-2-14.3-8.5-35-13.5-55.8-13.5-11 0-21 1.8-28.5 4-2.5.7-4 1.3-5.8 1.3-4.5 0-8-3.5-8-8s2.3-7.5 6-8.5C43 53 55.5 51 75.5 51c23.3 0 46.3 5.5 63.5 16 3 1.8 4.8 4.5 4.8 8.3 0 4.7-3.5 8.2-8 8.2h-.8zM50 64.5v-.3c0-4.8 4-8.5 9-8.5 2.8 0 4.8 1 6.8 2.3 16.3 9.5 36.8 15 58 15 2 0 4.3-.3 6.8-.3 4.8 0 8.8 3.5 8.8 8.3 0 4.5-3.3 8.3-8.3 8.3h-7c-24 0-46.8-6-65.3-17-4.5-2.5-8.8-5.3-8.8-8.8z" fill="white"/>
+            </svg>
+          </div>
+          <h3 class="spotify-auth-title">Connect with Spotify</h3>
+          <p class="spotify-auth-desc">See what I'm listening to in real-time — current track, top songs, and recent plays.</p>
+          <a href="/auth/login" class="btn btn-spotify" id="spotify-login-btn">
+            <svg viewBox="0 0 168 168" fill="none" width="20"><circle cx="84" cy="84" r="84" fill="white" fill-opacity=".15"/><path d="M124 112c-2 0-3-.7-4.5-1.7-12.3-7.5-27.8-11.5-44.5-11.5-9.2 0-18.5 1.3-27 3.5-1.7.5-4 1.5-5.5 1.5-3.8 0-6.5-3-6.5-6.8 0-4 2.5-6.3 5.5-7 10-2.5 20.8-4 33.5-4 19.5 0 37.5 4.5 52 13.5 2.5 1.5 4 3.5 4 6.8 0 3.8-2.8 6.7-7 6.7zm7-29.5c-2.3 0-4-1-5.5-2-14.3-8.5-35-13.5-55.8-13.5-11 0-21 1.8-28.5 4-2.5.7-4 1.3-5.8 1.3-4.5 0-8-3.5-8-8s2.3-7.5 6-8.5C43 53 55.5 51 75.5 51c23.3 0 46.3 5.5 63.5 16 3 1.8 4.8 4.5 4.8 8.3 0 4.7-3.5 8.2-8 8.2h-.8zM50 64.5v-.3c0-4.8 4-8.5 9-8.5 2.8 0 4.8 1 6.8 2.3 16.3 9.5 36.8 15 58 15 2 0 4.3-.3 6.8-.3 4.8 0 8.8 3.5 8.8 8.3 0 4.5-3.3 8.3-8.3 8.3h-7c-24 0-46.8-6-65.3-17-4.5-2.5-8.8-5.3-8.8-8.8z" fill="white"/></svg>
+            Connect Spotify
+          </a>
+        </div>
+
+        <!-- Connected state (hidden until connected) -->
+        <div class="spotify-player" id="spotify-player" style="display:none">
+
+          <!-- Now Playing -->
+          <div class="now-playing-card" id="now-playing-card">
+            <div class="np-header">
+              <div class="np-label">
+                <span class="np-dot"></span>
+                <span id="np-status-text">Now Playing</span>
+              </div>
+              <button class="np-refresh" id="np-refresh" title="Refresh">
+                <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.3.85 4.3 2.2M11 5h2.5V2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+            <div class="np-body">
+              <div class="np-artwork" id="np-artwork">
+                <div class="np-artwork-placeholder">
+                  <svg viewBox="0 0 40 40" fill="none" width="24"><circle cx="20" cy="20" r="8" stroke="white" stroke-opacity=".3" stroke-width="2"/><circle cx="20" cy="20" r="3" fill="white" fill-opacity=".4"/></svg>
+                </div>
+                <div class="np-artwork-eq" id="np-eq">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="np-info">
+                <span class="np-track" id="np-track">—</span>
+                <span class="np-artist" id="np-artist">—</span>
+                <span class="np-album" id="np-album">—</span>
+              </div>
+            </div>
+            <div class="np-progress-wrap">
+              <span class="np-time" id="np-elapsed">0:00</span>
+              <div class="np-progress">
+                <div class="np-progress-bar" id="np-progress-bar"></div>
+              </div>
+              <span class="np-time" id="np-duration">0:00</span>
+            </div>
+          </div>
+
+          <!-- Top Tracks + Recent -->
+          <div class="music-panels">
+            <div class="music-panel">
+              <div class="music-panel-header">
+                <h4>Top Tracks</h4>
+                <div class="time-filter" id="top-tracks-filter">
+                  <button class="tf-btn tf-btn--active" data-range="short_term">4 weeks</button>
+                  <button class="tf-btn" data-range="medium_term">6 months</button>
+                  <button class="tf-btn" data-range="long_term">All time</button>
+                </div>
+              </div>
+              <ol class="track-list" id="top-tracks-list">
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+              </ol>
+            </div>
+
+            <div class="music-panel">
+              <div class="music-panel-header">
+                <h4>Recently Played</h4>
+              </div>
+              <ol class="track-list" id="recent-tracks-list">
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+                <li class="track-item skeleton"><div class="track-num"></div><div class="track-art"></div><div class="track-info"><div class="track-name"></div><div class="track-artist"></div></div></li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Disconnect -->
+          <div class="spotify-footer">
+            <a href="/auth/logout" class="btn btn-ghost btn-sm">Disconnect</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-name">nrriandika</span>
+      <span class="footer-sep">·</span>
+      <span class="footer-year" id="footer-year"></span>
+      <span class="footer-sep">·</span>
+      <span class="footer-made">Made with code &amp; curiosity</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script src="spotify.js"></script>
+</body>
+</html>

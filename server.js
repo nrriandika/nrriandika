@@ -1,0 +1,272 @@
+/**
+ * nrriandika — Personal Website Server
+ * Handles Spotify OAuth 2.0 and proxies Spotify API calls.
+ *
+ * Flow:
+ *  1. Browser → GET /auth/login  → redirect to Spotify
+ *  2. Spotify → GET /auth/callback?code=… → exchange for tokens
+ *  3. Browser → GET /api/now-playing       → currently playing
+ *  4. Browser → GET /api/top-tracks        → top tracks
+ *  5. Browser → GET /api/recent-tracks     → recently played
+ */
+
+require('dotenv').config();
+const express       = require('express');
+const session       = require('express-session');
+const axios         = require('axios');
+const cors          = require('cors');
+const path          = require('path');
+const crypto        = require('crypto');
+const querystring   = require('querystring');
+const fs            = require('fs');
+const https         = require('https');
+
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
+// ─── Validate required env vars ────────────────────────────────
+const SPOTIFY_CLIENT_ID     = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const SPOTIFY_REDIRECT_URI  = process.env.SPOTIFY_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
+const SESSION_SECRET        = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+
+if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+  console.warn('\n⚠  SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET not set.');
+  console.warn('   Copy .env.example to .env and fill in your credentials.\n');
+}
+
+// ─── Middleware ─────────────────────────────────────────────────
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json());
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
+}));
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname)));
+
+// ─── Spotify helpers ────────────────────────────────────────────
+const SPOTIFY_SCOPES = [
+  'user-read-currently-playing',
+  'user-read-playback-state',
+  'user-top-read',
+  'user-read-recently-played',
+].join(' ');
+
+const SPOTIFY_TOKEN_URL   = 'https://accounts.spotify.com/api/token';
+const SPOTIFY_API_BASE    = 'https://api.spotify.com/v1';
+
+function base64Creds() {
+  return Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
+}
+
+/** Exchange auth code for access + refresh token */
+async function exchangeCode(code) {
+  const response = await axios.post(SPOTIFY_TOKEN_URL,
+    querystring.stringify({ grant_type: 'authorization_code', code, redirect_uri: SPOTIFY_REDIRECT_URI }),
+    { headers: { Authorization: `Basic ${base64Creds()}`, 'Content-Type': 'application/x-www-form-urlencoded' } }
+  );
+  return response.data; // { access_token, refresh_token, expires_in }
+}
+
+/** Refresh an expired access token */
+async function refreshToken(refreshTk) {
+  const response = await axios.post(SPOTIFY_TOKEN_URL,
+    querystring.stringify({ grant_type: 'refresh_token', refresh_token: refreshTk }),
+    { headers: { Authorization: `Basic ${base64Creds()}`, 'Content-Type': 'application/x-www-form-urlencoded' } }
+  );
+  return response.data; // { access_token, expires_in }
+}
+
+/** Middleware — ensures a valid access token is in session */
+async function requireSpotify(req, res, next) {
+  const { accessToken, refreshTk, expiresAt } = req.session.spotify || {};
+  if (!accessToken || !refreshTk) {
+    return res.status(401).json({ error: 'not_connected', message: 'Not connected to Spotify' });
+  }
+
+  // Refresh if expiring within 60 seconds
+  if (Date.now() >= (expiresAt - 60_000)) {
+    try {
+      const data = await refreshToken(refreshTk);
+      req.session.spotify.accessToken = data.access_token;
+      req.session.spotify.expiresAt   = Date.now() + data.expires_in * 1000;
+    } catch {
+      return res.status(401).json({ error: 'token_refresh_failed', message: 'Please reconnect to Spotify' });
+    }
+  }
+
+  next();
+}
+
+// ─── Auth routes ────────────────────────────────────────────────
+
+/** Step 1 — redirect user to Spotify login */
+app.get('/auth/login', (req, res) => {
+  const state = crypto.randomBytes(8).toString('hex');
+  req.session.oauthState = state;
+
+  const params = querystring.stringify({
+    response_type: 'code',
+    client_id:     SPOTIFY_CLIENT_ID,
+    scope:         SPOTIFY_SCOPES,
+    redirect_uri:  SPOTIFY_REDIRECT_URI,
+    state,
+    show_dialog:   false,
+  });
+
+  res.redirect(`https://accounts.spotify.com/authorize?${params}`);
+});
+
+/** Step 2 — Spotify redirects back with auth code */
+app.get('/auth/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+
+  if (error) return res.redirect('/#music?error=' + error);
+  if (state !== req.session.oauthState) return res.redirect('/#music?error=state_mismatch');
+
+  try {
+    const tokens = await exchangeCode(code);
+    req.session.spotify = {
+      accessToken: tokens.access_token,
+      refreshTk:   tokens.refresh_token,
+      expiresAt:   Date.now() + tokens.expires_in * 1000,
+    };
+    res.redirect('/#music');
+  } catch (err) {
+    console.error('OAuth callback error:', err.response?.data || err.message);
+    res.redirect('/#music?error=token_exchange_failed');
+  }
+});
+
+/** Logout — clear session tokens */
+app.get('/auth/logout', (req, res) => {
+  delete req.session.spotify;
+  res.redirect('/#music');
+});
+
+/** Status — let frontend check if connected */
+app.get('/auth/status', (req, res) => {
+  res.json({ connected: !!(req.session.spotify?.accessToken) });
+});
+
+// ─── API routes ─────────────────────────────────────────────────
+
+/** Currently playing track */
+app.get('/api/now-playing', requireSpotify, async (req, res) => {
+  try {
+    const { data, status } = await axios.get(
+      `${SPOTIFY_API_BASE}/me/player/currently-playing`,
+      { headers: { Authorization: `Bearer ${req.session.spotify.accessToken}` }, validateStatus: null }
+    );
+
+    if (status === 204 || !data || !data.item) {
+      return res.json({ playing: false });
+    }
+
+    const track = data.item;
+    res.json({
+      playing:   data.is_playing,
+      name:      track.name,
+      artist:    track.artists.map(a => a.name).join(', '),
+      album:     track.album.name,
+      image:     track.album.images[0]?.url || null,
+      url:       track.external_urls?.spotify || null,
+      progress:  data.progress_ms,
+      duration:  track.duration_ms,
+    });
+  } catch (err) {
+    console.error('now-playing error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'spotify_api_error' });
+  }
+});
+
+/** Top tracks */
+app.get('/api/top-tracks', requireSpotify, async (req, res) => {
+  const timeRange = ['short_term','medium_term','long_term'].includes(req.query.range)
+    ? req.query.range : 'short_term';
+
+  try {
+    const { data } = await axios.get(
+      `${SPOTIFY_API_BASE}/me/top/tracks?limit=10&time_range=${timeRange}`,
+      { headers: { Authorization: `Bearer ${req.session.spotify.accessToken}` } }
+    );
+
+    res.json(data.items.map((t, i) => ({
+      rank:   i + 1,
+      name:   t.name,
+      artist: t.artists.map(a => a.name).join(', '),
+      image:  t.album.images.slice(-1)[0]?.url || null,
+      url:    t.external_urls?.spotify || null,
+    })));
+  } catch (err) {
+    console.error('top-tracks error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'spotify_api_error' });
+  }
+});
+
+/** Recently played */
+app.get('/api/recent-tracks', requireSpotify, async (req, res) => {
+  try {
+    const { data } = await axios.get(
+      `${SPOTIFY_API_BASE}/me/player/recently-played?limit=10`,
+      { headers: { Authorization: `Bearer ${req.session.spotify.accessToken}` } }
+    );
+
+    // Deduplicate by track ID
+    const seen = new Set();
+    const tracks = [];
+    for (const item of data.items) {
+      if (!seen.has(item.track.id)) {
+        seen.add(item.track.id);
+        tracks.push({
+          rank:   tracks.length + 1,
+          name:   item.track.name,
+          artist: item.track.artists.map(a => a.name).join(', '),
+          image:  item.track.album.images.slice(-1)[0]?.url || null,
+          url:    item.track.external_urls?.spotify || null,
+        });
+      }
+      if (tracks.length >= 10) break;
+    }
+
+    res.json(tracks);
+  } catch (err) {
+    console.error('recent-tracks error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'spotify_api_error' });
+  }
+});
+
+// ─── SPA fallback ────────────────────────────────────────────────
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ─── Start ──────────────────────────────────────────────────────
+// Optional HTTPS: run `mkcert localhost` first, then set USE_HTTPS=true in .env
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
+
+if (USE_HTTPS) {
+  const certPath = process.env.SSL_CERT || path.join(__dirname, 'localhost.pem');
+  const keyPath  = process.env.SSL_KEY  || path.join(__dirname, 'localhost-key.pem');
+
+  if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+    console.error('\n❌  SSL cert not found. Run: mkcert localhost');
+    console.error('    Expected:', certPath, 'and', keyPath, '\n');
+    process.exit(1);
+  }
+
+  https.createServer({ cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) }, app)
+    .listen(PORT, () => {
+      console.log(`\n🔒  Server running at https://localhost:${PORT}`);
+      console.log(`🎵  Spotify auth: https://localhost:${PORT}/auth/login\n`);
+    });
+} else {
+  app.listen(PORT, () => {
+    console.log(`\n🌐  Server running at http://localhost:${PORT}`);
+    console.log(`🎵  Spotify auth: http://localhost:${PORT}/auth/login\n`);
+  });
+}
