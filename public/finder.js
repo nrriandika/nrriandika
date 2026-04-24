@@ -111,7 +111,7 @@
 
   // ─── Renderers ───────────────────────────────────────────────
   function renderLoading(userPrompt, deep) {
-    const title = deep ? 'Deep curating with Sonnet...' : 'Curating tracks for you';
+    const title = deep ? 'Searching the web & curating...' : 'Curating tracks for you';
     resultsEl.innerHTML = `
       <div class="finder-loading">
         <div class="finder-spinner ${deep ? 'finder-spinner--deep' : ''}"></div>

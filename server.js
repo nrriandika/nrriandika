@@ -21,6 +21,7 @@ const querystring   = require('querystring');
 const fs            = require('fs');
 const https         = require('https');
 const Anthropic     = require('@anthropic-ai/sdk');
+const { GoogleGenAI } = require('@google/genai');
 const supabase      = require('./supabase');
 
 const app  = express();
@@ -331,6 +332,10 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   : null;
 
+const gemini = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+  : null;
+
 const FINDER_SYSTEM_PROMPT = `You are a world-class music curator with encyclopedic knowledge across every genre, era, language, and scene — Indonesian indie, K-pop B-sides, 80s synthwave deep cuts, Japanese city pop, bossa nova, African funk, bedroom pop, hyperpop, post-rock, whatever fits.
 
 Given a natural-language prompt about what someone wants to listen to, suggest exactly 15 REAL, verifiable songs that genuinely match the vibe.
@@ -350,17 +355,24 @@ Output ONLY valid JSON, no markdown fences, no commentary:
 - Match the user's language/cultural context when relevant
 - No duplicates`;
 
-/** Ask Claude for song suggestions. `deep=true` uses Sonnet for refined taste. */
-async function generateSongSuggestions({ keyword, deep = false }) {
-  if (!anthropic) throw new Error('ANTHROPIC_API_KEY not set');
-  if (!keyword) throw new Error('Prompt is required');
+/** Parse JSON songs list from raw LLM text. Handles stray text/markdown fences. */
+function parseSongList(content) {
+  let parsed;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    const match = content.match(/\{[\s\S]*\}/);
+    if (match) parsed = JSON.parse(match[0]);
+    else throw new Error('Could not parse AI response');
+  }
+  const list = Array.isArray(parsed) ? parsed : (parsed.songs || parsed.tracks || parsed.recommendations || []);
+  return list.filter(x => x && x.name && x.artist);
+}
 
-  const userPrompt = String(keyword).trim().slice(0, 150);
-  const model = deep ? 'claude-sonnet-4-5' : 'claude-haiku-4-5-20251001';
-  const nonce = `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`;
-
+/** Haiku — fast default */
+async function suggestWithHaiku(userPrompt, nonce) {
   const response = await anthropic.messages.create({
-    model,
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1200,
     temperature: 1.0,
     system: [
@@ -371,22 +383,40 @@ async function generateSongSuggestions({ keyword, deep = false }) {
       content: `Find songs for: "${userPrompt}"\n\n(Session ${nonce} — surprise me with tracks I might not have heard before, avoid predictable picks.)`
     }],
   });
+  return parseSongList(response.content?.[0]?.text || '');
+}
 
-  const content = response.content?.[0]?.text || '';
+/** Gemini 2.5 Flash with Google Search grounding — for Deep Search
+ *  Understands current slang, memes, and cultural context via live search. */
+async function suggestWithGemini(userPrompt, nonce) {
+  if (!gemini) throw new Error('GEMINI_API_KEY not set');
 
-  let parsed;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    const match = content.match(/\{[\s\S]*\}/);
-    if (match) parsed = JSON.parse(match[0]);
-    else throw new Error('Could not parse AI response');
-  }
+  const response = await gemini.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: `Find songs for: "${userPrompt}"\n\n(Session ${nonce}. If the prompt contains slang, memes, or cultural references — especially Indonesian, SEA, K-pop, or other non-English context — search the web to understand it before recommending.)`,
+    config: {
+      systemInstruction: FINDER_SYSTEM_PROMPT + '\n\nIMPORTANT: Output must be pure JSON only. No markdown fences, no commentary, no explanations. Start with { and end with }.',
+      temperature: 1.0,
+      tools: [{ googleSearch: {} }],
+    },
+  });
 
-  const list = Array.isArray(parsed) ? parsed : (parsed.songs || parsed.tracks || parsed.recommendations || []);
-  const valid = list.filter(x => x && x.name && x.artist);
+  const text = response.text || response.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+  return parseSongList(text);
+}
 
-  // Shuffle then take 10 — different selection each time even from same 15
+/** Ask AI for song suggestions. `deep=true` uses Gemini with Google Search. */
+async function generateSongSuggestions({ keyword, deep = false }) {
+  if (!keyword) throw new Error('Prompt is required');
+
+  const userPrompt = String(keyword).trim().slice(0, 150);
+  const nonce = `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`;
+
+  const valid = deep
+    ? await suggestWithGemini(userPrompt, nonce)
+    : await suggestWithHaiku(userPrompt, nonce);
+
+  // Shuffle then take 10 — different selection each time
   const shuffled = valid.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 10);
 }
