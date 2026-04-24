@@ -12,7 +12,7 @@
 
 require('dotenv').config();
 const express       = require('express');
-const session       = require('express-session');
+const cookieSession = require('cookie-session');
 const axios         = require('axios');
 const cors          = require('cors');
 const path          = require('path');
@@ -38,11 +38,13 @@ if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
 // ─── Middleware ─────────────────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
+app.use(cookieSession({
+  name: 'session',
+  keys: [SESSION_SECRET],
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: process.env.NODE_ENV === 'production',
+  httpOnly: true,
+  sameSite: 'lax',
 }));
 
 // Serve static frontend files from public/
