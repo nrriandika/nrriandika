@@ -350,19 +350,17 @@ Output ONLY valid JSON, no markdown fences, no commentary:
 - Match the user's language/cultural context when relevant
 - No duplicates`;
 
-/** Ask Claude Haiku for song suggestions from a single natural-language prompt */
-async function generateSongSuggestions({ keyword }) {
+/** Ask Claude for song suggestions. `deep=true` uses Sonnet for refined taste. */
+async function generateSongSuggestions({ keyword, deep = false }) {
   if (!anthropic) throw new Error('ANTHROPIC_API_KEY not set');
   if (!keyword) throw new Error('Prompt is required');
 
   const userPrompt = String(keyword).trim().slice(0, 150);
-
-  // Add randomness: current timestamp + random bytes make each call unique
-  // so the model doesn't fall back to the same deterministic picks
+  const model = deep ? 'claude-sonnet-4-5' : 'claude-haiku-4-5-20251001';
   const nonce = `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`;
 
   const response = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model,
     max_tokens: 1200,
     temperature: 1.0,
     top_p: 0.95,
@@ -421,19 +419,20 @@ async function spotifyTrackLookup(token, name, artist) {
   }
 }
 
-/** Rate limit middleware — daily per-IP + per-endpoint counter in Supabase */
-function rateLimit(endpoint, maxPerDay) {
+/** Rate limit middleware — daily per-IP + per-endpoint counter in Supabase.
+ *  `costFn(req)` returns how many credits the request consumes (default 1). */
+function rateLimit(endpoint, maxPerDay, costFn = () => 1) {
   return async function (req, res, next) {
     if (!supabase) return next(); // skip if DB down, don't block users
 
-    // Resolve client IP (Vercel sets x-forwarded-for; trust proxy is enabled)
     const ip =
       req.ip ||
       (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
       req.socket?.remoteAddress ||
       'unknown';
 
-    const day = new Date().toISOString().slice(0, 10); // "2026-04-24"
+    const day = new Date().toISOString().slice(0, 10);
+    const cost = Math.max(1, costFn(req));
 
     try {
       const { data: existing } = await supabase
@@ -446,37 +445,47 @@ function rateLimit(endpoint, maxPerDay) {
 
       const used = existing?.count || 0;
 
-      if (used >= maxPerDay) {
+      if (used + cost > maxPerDay) {
+        const remaining = Math.max(0, maxPerDay - used);
         return res.status(429).json({
-          error:   'rate_limit_exceeded',
-          message: `You've used all ${maxPerDay} requests for today. Come back tomorrow!`,
-          limit:   maxPerDay,
+          error:     'rate_limit_exceeded',
+          message:   cost > 1
+            ? `Deep Search costs ${cost} credits, but you only have ${remaining} left today.`
+            : `You've used all ${maxPerDay} searches today. Come back tomorrow!`,
+          limit:     maxPerDay,
           used,
-          resetAt: `${day}T23:59:59Z`,
+          cost,
+          remaining,
+          resetAt:   `${day}T23:59:59Z`,
         });
       }
 
       await supabase
         .from('rate_limits')
-        .upsert({ ip, endpoint, day, count: used + 1 }, { onConflict: 'ip,endpoint,day' });
+        .upsert({ ip, endpoint, day, count: used + cost }, { onConflict: 'ip,endpoint,day' });
 
       res.setHeader('X-RateLimit-Limit', maxPerDay);
-      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxPerDay - used - 1));
-      req.rateLimit = { used: used + 1, limit: maxPerDay };
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxPerDay - used - cost));
+      req.rateLimit = { used: used + cost, limit: maxPerDay, cost };
       next();
     } catch (err) {
       console.error('rate limit error:', err.message);
-      next(); // fail-open: don't block on DB error
+      next();
     }
   };
 }
 
-/** AI-powered song finder: Claude Haiku → Spotify enrichment — 10 req/day per IP */
-app.get('/api/find-songs', rateLimit('find-songs', 10), async (req, res) => {
+/** AI-powered song finder: Claude Haiku/Sonnet → Spotify enrichment.
+ *  10 credits/day per IP. Deep Search (Sonnet) costs 2 credits. */
+app.get(
+  '/api/find-songs',
+  rateLimit('find-songs', 10, (req) => req.query.deep === 'true' ? 2 : 1),
+  async (req, res) => {
   try {
     const keyword = req.query.keyword
       ? String(req.query.keyword).trim().slice(0, 150)
       : '';
+    const deep = req.query.deep === 'true';
 
     if (!keyword) {
       return res.status(400).json({ error: 'no_prompt', message: 'Please describe what you want to hear' });
@@ -488,17 +497,17 @@ app.get('/api/find-songs', rateLimit('find-songs', 10), async (req, res) => {
       return res.status(503).json({ error: 'owner_not_connected', message: 'Owner Spotify not configured' });
     }
 
-    // Step 1: Ask Claude Haiku for song suggestions
+    // Step 1: Ask Claude for song suggestions (Haiku or Sonnet based on `deep`)
     let suggestions;
     try {
-      suggestions = await generateSongSuggestions({ keyword });
+      suggestions = await generateSongSuggestions({ keyword, deep });
     } catch (err) {
       console.error('Anthropic error:', err.response?.data || err.message);
       return res.status(502).json({ error: 'ai_failed', message: 'AI suggestion failed. ' + err.message });
     }
 
     if (!suggestions || suggestions.length === 0) {
-      return res.json({ query: keyword, tracks: [], rateLimit: req.rateLimit });
+      return res.json({ query: keyword, tracks: [], deep, rateLimit: req.rateLimit });
     }
 
     // Step 2: Enrich each suggestion with Spotify data (parallel)
@@ -506,7 +515,7 @@ app.get('/api/find-songs', rateLimit('find-songs', 10), async (req, res) => {
       suggestions.map(s => spotifyTrackLookup(token, s.name, s.artist))
     );
 
-    res.json({ query: keyword, tracks: enriched.filter(Boolean), rateLimit: req.rateLimit });
+    res.json({ query: keyword, tracks: enriched.filter(Boolean), deep, rateLimit: req.rateLimit });
   } catch (err) {
     console.error('find-songs error:', err.response?.status, err.response?.data || err.message);
     res.status(500).json({

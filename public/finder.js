@@ -12,6 +12,7 @@
   const clearBtn    = document.getElementById('finder-clear');
   const resultsEl   = document.getElementById('finder-results');
   const quickstart  = document.getElementById('finder-quickstart');
+  const deepToggle  = document.getElementById('finder-deep');
 
   if (!wrapper || !promptIn || !submitBtn) return;
 
@@ -109,12 +110,13 @@
   }
 
   // ─── Renderers ───────────────────────────────────────────────
-  function renderLoading(userPrompt) {
+  function renderLoading(userPrompt, deep) {
+    const title = deep ? 'Deep curating with Sonnet...' : 'Curating tracks for you';
     resultsEl.innerHTML = `
       <div class="finder-loading">
-        <div class="finder-spinner"></div>
+        <div class="finder-spinner ${deep ? 'finder-spinner--deep' : ''}"></div>
         <div class="finder-loading-text">
-          <span class="finder-loading-title">Curating tracks for you</span>
+          <span class="finder-loading-title">${deep ? '⚡ ' : ''}${title}</span>
           <span class="finder-loading-sub">"${esc(userPrompt)}"</span>
         </div>
       </div>
@@ -137,7 +139,7 @@
     `;
   }
 
-  function renderResults(tracks, query, rateLimit) {
+  function renderResults(tracks, query, rateLimit, deep) {
     if (!tracks || tracks.length === 0) {
       resultsEl.innerHTML = `
         <div class="finder-empty">
@@ -152,9 +154,13 @@
       ? `<span class="finder-ratelimit-badge" title="Searches used today">${rateLimit.used}/${rateLimit.limit}</span>`
       : '';
 
+    const deepBadge = deep
+      ? `<span class="finder-deep-badge-result" title="Curated by Claude Sonnet">⚡ Deep</span>`
+      : '';
+
     resultsEl.innerHTML = `
       <div class="finder-results-header">
-        <span class="finder-results-count">${tracks.length} tracks ${rlBadge}</span>
+        <span class="finder-results-count">${tracks.length} tracks ${deepBadge} ${rlBadge}</span>
         <span class="finder-results-query">${esc(query)}</span>
       </div>
       <div class="finder-grid">
@@ -216,13 +222,16 @@
       return;
     }
 
+    const deep = !!deepToggle?.checked;
+
     stopPreview();
-    renderLoading(prompt);
+    renderLoading(prompt, deep);
     submitBtn.disabled = true;
     submitBtn.classList.add('finder-submit--loading');
 
     try {
       const params = new URLSearchParams({ keyword: prompt });
+      if (deep) params.set('deep', 'true');
       const res = await fetch(`/api/find-songs?${params.toString()}`);
 
       if (!res.ok) {
@@ -235,7 +244,7 @@
       }
 
       const data = await res.json();
-      renderResults(data.tracks, data.query, data.rateLimit);
+      renderResults(data.tracks, data.query, data.rateLimit, data.deep);
     } catch {
       renderError('Network error. Please try again.');
     } finally {

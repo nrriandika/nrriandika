@@ -1986,13 +1986,20 @@ svg { display: block; }
 
 .finder-actions {
   display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.finder-actions-right {
+  display: flex;
   gap: 8px;
   align-items: center;
-  margin-top: 8px;
 }
 
 .finder-submit {
-  flex: 1;
   justify-content: center;
   padding: 12px 24px;
 }
@@ -2006,6 +2013,135 @@ svg { display: block; }
 
 .finder-clear {
   padding: 8px 16px;
+}
+
+/* ─── Deep Search toggle ───────────────────────────────────── */
+.finder-deep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition);
+  user-select: none;
+}
+
+.finder-deep:hover {
+  border-color: var(--border-2);
+  background: var(--surface);
+}
+
+.finder-deep input { display: none; }
+
+.finder-deep-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.finder-deep-thumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  background: var(--text-3);
+  border-radius: 50%;
+  transition: all var(--transition);
+}
+
+.finder-deep input:checked ~ .finder-deep-track {
+  background: linear-gradient(135deg, #7c63ff, #22d3ee);
+  border-color: transparent;
+  box-shadow: 0 0 16px rgba(124,99,255,0.4);
+}
+
+.finder-deep input:checked ~ .finder-deep-track .finder-deep-thumb {
+  background: white;
+  transform: translateX(16px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.finder-deep-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.finder-deep-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: color var(--transition);
+}
+
+.finder-deep input:checked ~ .finder-deep-content .finder-deep-main {
+  color: var(--accent-2);
+}
+
+.finder-deep-icon {
+  font-size: 14px;
+  transition: transform var(--transition);
+}
+
+.finder-deep input:checked ~ .finder-deep-content .finder-deep-icon {
+  animation: deepSparkle 1.5s ease infinite;
+}
+
+@keyframes deepSparkle {
+  0%, 100% { transform: scale(1) rotate(0); filter: drop-shadow(0 0 2px rgba(124,99,255,0.5)); }
+  50%      { transform: scale(1.15) rotate(15deg); filter: drop-shadow(0 0 8px rgba(124,99,255,0.9)); }
+}
+
+.finder-deep-cost {
+  padding: 1px 6px;
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.finder-deep-desc {
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.2px;
+}
+
+/* Deep badge in results */
+.finder-deep-badge-result {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, rgba(124,99,255,0.2), rgba(34,211,238,0.2));
+  border: 1px solid rgba(124,99,255,0.3);
+  color: var(--accent-2);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+  box-shadow: 0 0 12px rgba(124,99,255,0.15);
+}
+
+/* Deep spinner variant */
+.finder-spinner--deep {
+  border-top-color: transparent;
+  background: conic-gradient(from 0deg, transparent, var(--accent), var(--cyan), transparent);
+  mask: radial-gradient(circle, transparent 55%, black 58%);
+  -webkit-mask: radial-gradient(circle, transparent 55%, black 58%);
+  border: none;
 }
 
 /* Results */
@@ -2281,8 +2417,10 @@ svg { display: block; }
 /* Responsive */
 @media (max-width: 640px) {
   .finder-wrapper { padding: 20px; }
-  .finder-actions { flex-direction: column; }
-  .finder-submit, .finder-clear { width: 100%; }
+  .finder-actions { flex-direction: column; align-items: stretch; }
+  .finder-deep { justify-content: flex-start; }
+  .finder-actions-right { width: 100%; }
+  .finder-submit { flex: 1; }
   .finder-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
 

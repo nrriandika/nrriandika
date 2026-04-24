@@ -422,7 +422,7 @@
           <div>
             <h3 class="finder-title">
               <span class="finder-title-icon">✦</span>
-              AI Song Finder
+              Padozken Temptbank AI
             </h3>
             <p class="finder-subtitle">Describe the vibe. I'll find the tracks.</p>
           </div>
@@ -456,14 +456,31 @@
             </div>
           </div>
 
-          <!-- Submit -->
+          <!-- Deep Search toggle + Submit -->
           <div class="finder-actions">
-            <button class="btn btn-primary finder-submit" id="finder-submit">
-              <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="finder-submit-icon-default"/></svg>
-              <span class="finder-submit-text">Find Songs</span>
-              <span class="finder-submit-sparkle">✦</span>
-            </button>
-            <button class="btn btn-ghost btn-sm finder-clear" id="finder-clear" type="button">Clear</button>
+            <label class="finder-deep" id="finder-deep-toggle">
+              <input type="checkbox" id="finder-deep" />
+              <span class="finder-deep-track">
+                <span class="finder-deep-thumb"></span>
+              </span>
+              <span class="finder-deep-content">
+                <span class="finder-deep-main">
+                  <span class="finder-deep-icon">⚡</span>
+                  <span class="finder-deep-label">Deep Search</span>
+                  <span class="finder-deep-cost">2x</span>
+                </span>
+                <span class="finder-deep-desc">Sonnet · refined taste, hidden gems</span>
+              </span>
+            </label>
+
+            <div class="finder-actions-right">
+              <button class="btn btn-ghost btn-sm finder-clear" id="finder-clear" type="button">Clear</button>
+              <button class="btn btn-primary finder-submit" id="finder-submit">
+                <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="finder-submit-text">Find Songs</span>
+                <span class="finder-submit-sparkle">✦</span>
+              </button>
+            </div>
           </div>
         </div>
 
