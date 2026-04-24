@@ -243,8 +243,14 @@ app.get('/api/recent-tracks', requireSpotify, async (req, res) => {
 // ─── Recommendations (Supabase) ─────────────────────────────────
 const supabase = require('./supabase');
 
+/** Guard — return 503 if Supabase is not configured */
+function requireSupabase(_req, res, next) {
+  if (!supabase) return res.status(503).json({ error: 'database_not_configured' });
+  next();
+}
+
 /** Get all recommendations (newest first) */
-app.get('/api/recommendations', async (_req, res) => {
+app.get('/api/recommendations', requireSupabase, async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('recommendations')
@@ -261,7 +267,7 @@ app.get('/api/recommendations', async (_req, res) => {
 });
 
 /** Submit a new recommendation */
-app.post('/api/recommendations', async (req, res) => {
+app.post('/api/recommendations', requireSupabase, async (req, res) => {
   const { type, name, reason, submitted_by, emoji } = req.body;
 
   if (!type || !name || !name.trim()) {
@@ -294,7 +300,7 @@ app.post('/api/recommendations', async (req, res) => {
 });
 
 /** Like a recommendation */
-app.post('/api/recommendations/:id/like', async (req, res) => {
+app.post('/api/recommendations/:id/like', requireSupabase, async (req, res) => {
   const { id } = req.params;
   try {
     // Fetch current likes
