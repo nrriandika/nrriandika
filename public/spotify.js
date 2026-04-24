@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────
    nrriandika — Spotify Frontend Module
-   Communicates with the Express backend to display music data.
+   Dual mode: shows owner's data by default + optional visitor login.
 ───────────────────────────────────────────────────────────────── */
 
 (function SpotifyUI() {
@@ -19,16 +19,22 @@
   const npElapsed     = document.getElementById('np-elapsed');
   const npDuration    = document.getElementById('np-duration');
   const npRefreshBtn  = document.getElementById('np-refresh');
+  const npSourceBadge = document.getElementById('np-source-badge');
 
   // Track lists
   const topTracksList    = document.getElementById('top-tracks-list');
   const recentTracksList = document.getElementById('recent-tracks-list');
   const topTracksFilter  = document.getElementById('top-tracks-filter');
 
+  // Visitor login / switch
+  const visitorLoginBtn  = document.getElementById('visitor-login-btn');
+  const visitorLogoutBtn = document.getElementById('visitor-logout-btn');
+
   // ─── State ───────────────────────────────────────────────────
   let currentRange    = 'short_term';
   let nowPlayingData  = null;
   let progressInterval = null;
+  let currentSource   = 'none'; // 'owner' or 'user'
 
   // ─── Utilities ───────────────────────────────────────────────
   function msToTime(ms) {
@@ -46,9 +52,11 @@
   }
 
   // ─── Show/hide states ─────────────────────────────────────────
-  function showPlayer() {
+  function showPlayer(source) {
     authSection.style.display = 'none';
     playerSection.style.display = 'flex';
+    currentSource = source;
+    updateSourceUI();
   }
 
   function showAuth() {
@@ -56,12 +64,33 @@
     playerSection.style.display = 'none';
   }
 
+  function updateSourceUI() {
+    if (npSourceBadge) {
+      if (currentSource === 'owner') {
+        npSourceBadge.textContent = "nrriandika's music";
+        npSourceBadge.style.display = '';
+      } else if (currentSource === 'user') {
+        npSourceBadge.textContent = 'Your music';
+        npSourceBadge.style.display = '';
+      } else {
+        npSourceBadge.style.display = 'none';
+      }
+    }
+
+    if (visitorLoginBtn) {
+      visitorLoginBtn.style.display = currentSource === 'user' ? 'none' : '';
+    }
+    if (visitorLogoutBtn) {
+      visitorLogoutBtn.style.display = currentSource === 'user' ? '' : 'none';
+    }
+  }
+
   // ─── Check auth status ────────────────────────────────────────
   async function checkAuthStatus() {
     try {
       const data = await apiFetch('/auth/status');
       if (data.connected) {
-        showPlayer();
+        showPlayer(data.source);
         initPlayer();
       } else {
         showAuth();
@@ -109,8 +138,11 @@
     nowPlayingData = data;
     clearInterval(progressInterval);
 
+    if (data && data.source) currentSource = data.source;
+    updateSourceUI();
+
     if (!data || !data.playing) {
-      npStatusText.textContent   = data?.playing === false && data?.name ? 'Paused' : 'Not Playing';
+      npStatusText.textContent = data?.playing === false && data?.name ? 'Paused' : 'Not Playing';
       npEq?.classList.add('paused');
     } else {
       npStatusText.textContent = 'Now Playing';
@@ -208,17 +240,14 @@
     fetchTopTracks(currentRange);
     fetchRecentTracks();
 
-    // Poll now-playing every 30 s
     setInterval(fetchNowPlaying, 30_000);
 
-    // Refresh button
     npRefreshBtn?.addEventListener('click', () => {
       npRefreshBtn.style.transform = 'rotate(-360deg)';
       fetchNowPlaying();
       setTimeout(() => { npRefreshBtn.style.transform = ''; }, 500);
     });
 
-    // Time-range filter
     topTracksFilter?.addEventListener('click', (e) => {
       const btn = e.target.closest('.tf-btn');
       if (!btn) return;
@@ -229,7 +258,7 @@
     });
   }
 
-  // ─── Handle callback redirect (#music?error=…) ────────────────
+  // ─── Handle callback redirect (#music?…) ──────────────────────
   function handleHashParams() {
     const hash = window.location.hash;
     if (hash.includes('?error=')) {
@@ -243,9 +272,11 @@
         const notice = document.createElement('p');
         notice.style.cssText = 'color:#f87171;font-size:13px;margin-top:8px;';
         notice.textContent = msg;
-        document.getElementById('spotify-auth')?.appendChild(notice);
+        authSection?.appendChild(notice);
       }
-      // Clean up URL
+      history.replaceState(null, '', window.location.pathname + '#music');
+    }
+    if (hash.includes('owner=connected')) {
       history.replaceState(null, '', window.location.pathname + '#music');
     }
   }

@@ -1008,6 +1008,16 @@ svg { display: block; }
   transform: rotate(-30deg);
 }
 
+.np-source-badge {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(124,99,255,0.12);
+  color: var(--accent-2);
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
 .np-body {
   display: flex;
   gap: 24px;

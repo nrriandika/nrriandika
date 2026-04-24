@@ -338,6 +338,7 @@
               <div class="np-label">
                 <span class="np-dot"></span>
                 <span id="np-status-text">Now Playing</span>
+                <span class="np-source-badge" id="np-source-badge"></span>
               </div>
               <button class="np-refresh" id="np-refresh" title="Refresh">
                 <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.3.85 4.3 2.2M11 5h2.5V2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -403,7 +404,13 @@
 
           <!-- Disconnect -->
           <div class="spotify-footer">
-            <a href="/auth/logout" class="btn btn-ghost btn-sm">Disconnect</a>
+            <a href="/auth/login" class="btn btn-ghost btn-sm" id="visitor-login-btn">
+              <svg viewBox="0 0 168 168" fill="none" width="14"><circle cx="84" cy="84" r="84" fill="currentColor" fill-opacity=".2"/></svg>
+              Login with your Spotify
+            </a>
+            <a href="/auth/logout" class="btn btn-ghost btn-sm" id="visitor-logout-btn" style="display:none">
+              Switch back to nrriandika's music
+            </a>
           </div>
         </div>
 

@@ -84,32 +84,88 @@ async function refreshToken(refreshTk) {
   return response.data; // { access_token, expires_in }
 }
 
-/** Middleware — ensures a valid access token is in session */
-async function requireSpotify(req, res, next) {
-  const { accessToken, refreshTk, expiresAt } = req.session.spotify || {};
-  if (!accessToken || !refreshTk) {
-    return res.status(401).json({ error: 'not_connected', message: 'Not connected to Spotify' });
-  }
+// ─── Owner token helpers (Supabase) ─────────────────────────────
+
+/** Get owner's Spotify token from Supabase, refresh if needed */
+async function getOwnerToken() {
+  if (!supabase) return null;
+
+  const { data: owner, error } = await supabase
+    .from('spotify_owner')
+    .select('*')
+    .eq('id', 'owner')
+    .single();
+
+  if (error || !owner) return null;
 
   // Refresh if expiring within 60 seconds
-  if (Date.now() >= (expiresAt - 60_000)) {
+  if (Date.now() >= (owner.expires_at - 60_000)) {
     try {
-      const data = await refreshToken(refreshTk);
-      req.session.spotify.accessToken = data.access_token;
-      req.session.spotify.expiresAt   = Date.now() + data.expires_in * 1000;
+      const refreshed = await refreshToken(owner.refresh_token);
+      const newExpires = Date.now() + refreshed.expires_in * 1000;
+
+      await supabase.from('spotify_owner').upsert({
+        id: 'owner',
+        access_token:  refreshed.access_token,
+        refresh_token: refreshed.refresh_token || owner.refresh_token,
+        expires_at:    newExpires,
+        updated_at:    new Date().toISOString(),
+      });
+
+      return refreshed.access_token;
     } catch {
-      return res.status(401).json({ error: 'token_refresh_failed', message: 'Please reconnect to Spotify' });
+      return null;
     }
   }
 
-  next();
+  return owner.access_token;
+}
+
+/** Middleware — resolves access token: user session first, then owner fallback */
+async function resolveSpotifyToken(req, res, next) {
+  // 1) Visitor has their own session
+  if (req.session.spotify?.accessToken) {
+    const { accessToken, refreshTk, expiresAt } = req.session.spotify;
+
+    if (Date.now() >= (expiresAt - 60_000)) {
+      try {
+        const data = await refreshToken(refreshTk);
+        req.session.spotify.accessToken = data.access_token;
+        req.session.spotify.expiresAt   = Date.now() + data.expires_in * 1000;
+      } catch {
+        delete req.session.spotify;
+      }
+    }
+
+    if (req.session.spotify?.accessToken) {
+      req.spotifyToken = req.session.spotify.accessToken;
+      req.spotifySource = 'user';
+      return next();
+    }
+  }
+
+  // 2) Fallback: owner token from Supabase
+  const ownerToken = await getOwnerToken();
+  if (ownerToken) {
+    req.spotifyToken = ownerToken;
+    req.spotifySource = 'owner';
+    return next();
+  }
+
+  return res.status(401).json({ error: 'not_connected' });
 }
 
 // ─── Auth routes ────────────────────────────────────────────────
 
+const OWNER_SECRET = process.env.OWNER_SECRET || 'owner-setup';
+
 /** Step 1 — redirect user to Spotify login */
 app.get('/auth/login', (req, res) => {
   const state = crypto.randomBytes(8).toString('hex');
+  // Mark if this is owner setup
+  if (req.query.owner === OWNER_SECRET) {
+    req.session.isOwnerSetup = true;
+  }
   req.session.oauthState = state;
 
   const params = querystring.stringify({
@@ -133,6 +189,22 @@ app.get('/auth/callback', async (req, res) => {
 
   try {
     const tokens = await exchangeCode(code);
+    const isOwner = req.session.isOwnerSetup;
+    delete req.session.isOwnerSetup;
+
+    // If owner setup → save to Supabase
+    if (isOwner && supabase) {
+      await supabase.from('spotify_owner').upsert({
+        id: 'owner',
+        access_token:  tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at:    Date.now() + tokens.expires_in * 1000,
+        updated_at:    new Date().toISOString(),
+      });
+      return res.redirect('/#music?owner=connected');
+    }
+
+    // Normal visitor login
     req.session.spotify = {
       accessToken: tokens.access_token,
       refreshTk:   tokens.refresh_token,
@@ -145,29 +217,36 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-/** Logout — clear session tokens */
+/** Logout — clear visitor session (not owner) */
 app.get('/auth/logout', (req, res) => {
   delete req.session.spotify;
   res.redirect('/#music');
 });
 
-/** Status — let frontend check if connected */
-app.get('/auth/status', (req, res) => {
-  res.json({ connected: !!(req.session.spotify?.accessToken) });
+/** Status — check connection state */
+app.get('/auth/status', async (req, res) => {
+  const userConnected = !!(req.session.spotify?.accessToken);
+  const ownerToken = await getOwnerToken();
+
+  res.json({
+    connected: userConnected || !!ownerToken,
+    source: userConnected ? 'user' : (ownerToken ? 'owner' : 'none'),
+    userConnected,
+  });
 });
 
-// ─── API routes ─────────────────────────────────────────────────
+// ─── Spotify API routes ─────────────────────────────────────────
 
 /** Currently playing track */
-app.get('/api/now-playing', requireSpotify, async (req, res) => {
+app.get('/api/now-playing', resolveSpotifyToken, async (req, res) => {
   try {
     const { data, status } = await axios.get(
       `${SPOTIFY_API_BASE}/me/player/currently-playing`,
-      { headers: { Authorization: `Bearer ${req.session.spotify.accessToken}` }, validateStatus: null }
+      { headers: { Authorization: `Bearer ${req.spotifyToken}` }, validateStatus: null }
     );
 
     if (status === 204 || !data || !data.item) {
-      return res.json({ playing: false });
+      return res.json({ playing: false, source: req.spotifySource });
     }
 
     const track = data.item;
@@ -180,6 +259,7 @@ app.get('/api/now-playing', requireSpotify, async (req, res) => {
       url:       track.external_urls?.spotify || null,
       progress:  data.progress_ms,
       duration:  track.duration_ms,
+      source:    req.spotifySource,
     });
   } catch (err) {
     console.error('now-playing error:', err.response?.data || err.message);
@@ -188,14 +268,14 @@ app.get('/api/now-playing', requireSpotify, async (req, res) => {
 });
 
 /** Top tracks */
-app.get('/api/top-tracks', requireSpotify, async (req, res) => {
+app.get('/api/top-tracks', resolveSpotifyToken, async (req, res) => {
   const timeRange = ['short_term','medium_term','long_term'].includes(req.query.range)
     ? req.query.range : 'short_term';
 
   try {
     const { data } = await axios.get(
       `${SPOTIFY_API_BASE}/me/top/tracks?limit=10&time_range=${timeRange}`,
-      { headers: { Authorization: `Bearer ${req.session.spotify.accessToken}` } }
+      { headers: { Authorization: `Bearer ${req.spotifyToken}` } }
     );
 
     res.json(data.items.map((t, i) => ({
@@ -212,14 +292,13 @@ app.get('/api/top-tracks', requireSpotify, async (req, res) => {
 });
 
 /** Recently played */
-app.get('/api/recent-tracks', requireSpotify, async (req, res) => {
+app.get('/api/recent-tracks', resolveSpotifyToken, async (req, res) => {
   try {
     const { data } = await axios.get(
       `${SPOTIFY_API_BASE}/me/player/recently-played?limit=10`,
-      { headers: { Authorization: `Bearer ${req.session.spotify.accessToken}` } }
+      { headers: { Authorization: `Bearer ${req.spotifyToken}` } }
     );
 
-    // Deduplicate by track ID
     const seen = new Set();
     const tracks = [];
     for (const item of data.items) {
