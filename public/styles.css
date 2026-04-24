@@ -2058,6 +2058,73 @@ svg { display: block; }
   margin-bottom: 12px;
 }
 
+/* Load more button */
+.recs-load-more {
+  margin-top: 14px;
+  width: 100%;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.recs-load-more:hover {
+  background: var(--surface-2);
+  border-color: rgba(124,99,255,0.3);
+  border-style: solid;
+  color: var(--accent-2);
+  transform: translateY(-1px);
+}
+
+.recs-load-more:active {
+  transform: translateY(0);
+}
+
+.recs-load-more-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.recs-load-more:hover .recs-load-more-count {
+  color: var(--accent-2);
+  opacity: 0.7;
+}
+
+.recs-load-more.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.recs-load-more.loading .recs-load-more-text::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: lmSpin 0.6s linear infinite;
+  margin-left: 8px;
+  vertical-align: -2px;
+}
+
+@keyframes lmSpin {
+  to { transform: rotate(360deg); }
+}
+
 /* ─── Responsive recs ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .recs-header { flex-direction: column; gap: 12px; }

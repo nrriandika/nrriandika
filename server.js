@@ -332,16 +332,19 @@ function requireSupabase(_req, res, next) {
 }
 
 /** Get all recommendations (newest first) */
-app.get('/api/recommendations', requireSupabase, async (_req, res) => {
+app.get('/api/recommendations', requireSupabase, async (req, res) => {
+  const limit  = Math.min(parseInt(req.query.limit) || 10, 50);
+  const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('recommendations')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(50);
+      .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    res.json(data);
+    res.json({ items: data, total: count, offset, limit });
   } catch (err) {
     console.error('recommendations fetch error:', err.message);
     res.status(500).json({ error: 'fetch_failed' });

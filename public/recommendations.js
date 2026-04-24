@@ -1,28 +1,37 @@
 /* ─────────────────────────────────────────────────────────────────
    nrriandika — Recommendations Module
    Interactive song/artist recommendations backed by Supabase.
+   Paginated with "Load more" button.
 ───────────────────────────────────────────────────────────────── */
 
 (function Recs() {
   // ─── DOM refs ────────────────────────────────────────────────
-  const form       = document.getElementById('recs-form');
-  const nameInput  = document.getElementById('rec-name');
-  const reasonInput = document.getElementById('rec-reason');
-  const byInput    = document.getElementById('rec-name-by');
-  const submitBtn  = document.getElementById('recs-submit');
-  const toast      = document.getElementById('recs-toast');
-  const listEl     = document.getElementById('recs-list');
-  const emptyEl    = document.getElementById('recs-empty');
-  const countEl    = document.getElementById('recs-count');
-  const emojiPicker = document.getElementById('recs-emoji-picker');
+  const form         = document.getElementById('recs-form');
+  const nameInput    = document.getElementById('rec-name');
+  const reasonInput  = document.getElementById('rec-reason');
+  const byInput      = document.getElementById('rec-name-by');
+  const submitBtn    = document.getElementById('recs-submit');
+  const toast        = document.getElementById('recs-toast');
+  const listEl       = document.getElementById('recs-list');
+  const emptyEl      = document.getElementById('recs-empty');
+  const countEl      = document.getElementById('recs-count');
+  const emojiPicker  = document.getElementById('recs-emoji-picker');
+  const loadMoreBtn  = document.getElementById('recs-load-more');
+  const loadMoreCount = document.getElementById('recs-load-more-count');
 
   if (!form || !listEl) return;
+
+  // ─── Config ──────────────────────────────────────────────────
+  const PAGE_SIZE = 10;
 
   // ─── State ───────────────────────────────────────────────────
   let selectedType  = 'song';
   let selectedEmoji = '🎵';
   let currentFilter = 'all';
   let allRecs       = [];
+  let totalRecs     = 0;
+  let currentOffset = 0;
+  let loading       = false;
   let likedIds      = new Set(JSON.parse(localStorage.getItem('rec_likes') || '[]'));
 
   // ─── Type toggle ─────────────────────────────────────────────
@@ -32,12 +41,8 @@
       btn.classList.add('recs-type-btn--active');
       selectedType = btn.dataset.type;
 
-      // Auto-switch default emoji
-      if (selectedType === 'song' && selectedEmoji === '🎤') {
-        selectEmoji('🎵');
-      } else if (selectedType === 'artist' && selectedEmoji === '🎵') {
-        selectEmoji('🎤');
-      }
+      if (selectedType === 'song' && selectedEmoji === '🎤') selectEmoji('🎵');
+      else if (selectedType === 'artist' && selectedEmoji === '🎵') selectEmoji('🎤');
 
       nameInput.placeholder = selectedType === 'song' ? 'Song name...' : 'Artist name...';
     });
@@ -87,7 +92,6 @@
     return new Date(dateStr).toLocaleDateString();
   }
 
-  // ─── Escape HTML ─────────────────────────────────────────────
   function esc(str) {
     return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -98,18 +102,19 @@
       ? allRecs
       : allRecs.filter(r => r.type === currentFilter);
 
-    countEl.textContent = allRecs.length;
+    countEl.textContent = totalRecs;
 
     if (filtered.length === 0) {
       listEl.innerHTML = '';
       emptyEl.style.display = 'block';
+      updateLoadMore();
       return;
     }
 
     emptyEl.style.display = 'none';
 
     listEl.innerHTML = filtered.map((rec, i) => `
-      <div class="rec-card" style="animation-delay:${Math.min(i * 0.04, 0.4)}s">
+      <div class="rec-card" style="animation-delay:${Math.min(i * 0.03, 0.3)}s">
         <div class="rec-emoji">${rec.emoji || '🎵'}</div>
         <div class="rec-body">
           <div class="rec-top">
@@ -130,15 +135,29 @@
         </div>
       </div>
     `).join('');
+
+    updateLoadMore();
   }
 
-  // ─── Like handler (delegated) ────────────────────────────────
+  // ─── Load more visibility ────────────────────────────────────
+  function updateLoadMore() {
+    if (!loadMoreBtn) return;
+    const remaining = totalRecs - allRecs.length;
+    if (remaining > 0) {
+      loadMoreBtn.style.display = '';
+      loadMoreCount.textContent = `(${remaining} more)`;
+    } else {
+      loadMoreBtn.style.display = 'none';
+    }
+  }
+
+  // ─── Like handler ────────────────────────────────────────────
   listEl.addEventListener('click', async (e) => {
     const btn = e.target.closest('.rec-like-btn');
     if (!btn) return;
 
     const id = btn.dataset.id;
-    if (likedIds.has(id)) return; // already liked
+    if (likedIds.has(id)) return;
 
     btn.classList.add('liked');
     const countSpan = btn.querySelector('span');
@@ -148,22 +167,56 @@
     likedIds.add(id);
     localStorage.setItem('rec_likes', JSON.stringify([...likedIds]));
 
+    const rec = allRecs.find(r => r.id === id);
+    if (rec) rec.likes = (rec.likes || 0) + 1;
+
     try {
       await fetch(`/api/recommendations/${id}/like`, { method: 'POST' });
     } catch { /* silent */ }
   });
 
-  // ─── Fetch all ───────────────────────────────────────────────
-  async function fetchRecs() {
+  // ─── Fetch page ──────────────────────────────────────────────
+  async function fetchPage(offset) {
+    if (loading) return;
+    loading = true;
+
     try {
-      const res = await fetch('/api/recommendations');
+      const res = await fetch(`/api/recommendations?offset=${offset}&limit=${PAGE_SIZE}`);
       if (!res.ok) throw new Error('fetch failed');
-      allRecs = await res.json();
+      const data = await res.json();
+
+      totalRecs = data.total || 0;
+
+      if (offset === 0) {
+        allRecs = data.items || [];
+      } else {
+        const existing = new Set(allRecs.map(r => r.id));
+        for (const item of (data.items || [])) {
+          if (!existing.has(item.id)) allRecs.push(item);
+        }
+      }
+
+      currentOffset = allRecs.length;
       renderList();
     } catch {
-      listEl.innerHTML = '<p style="text-align:center;color:var(--text-3);padding:20px;font-size:13px">Could not load recommendations.</p>';
+      if (offset === 0) {
+        listEl.innerHTML = '<p style="text-align:center;color:var(--text-3);padding:20px;font-size:13px">Could not load recommendations.</p>';
+      } else {
+        showToast('Could not load more. Please try again.', 'error');
+      }
+    } finally {
+      loading = false;
     }
   }
+
+  // ─── Load more click ─────────────────────────────────────────
+  loadMoreBtn?.addEventListener('click', () => {
+    if (loading) return;
+    loadMoreBtn.classList.add('loading');
+    fetchPage(currentOffset).finally(() => {
+      loadMoreBtn.classList.remove('loading');
+    });
+  });
 
   // ─── Submit ──────────────────────────────────────────────────
   submitBtn.addEventListener('click', async () => {
@@ -195,16 +248,16 @@
 
       const newRec = await res.json();
       allRecs.unshift(newRec);
+      totalRecs += 1;
+      currentOffset += 1;
       renderList();
 
-      // Reset form
       nameInput.value = '';
       reasonInput.value = '';
       byInput.value = '';
 
       showToast('Thanks for the recommendation!', 'success');
 
-      // Scroll to the new card
       const firstCard = listEl.querySelector('.rec-card');
       if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
@@ -216,12 +269,11 @@
     }
   });
 
-  // Enter key on name input triggers submit
   nameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submitBtn.click();
   });
 
   // ─── Init ────────────────────────────────────────────────────
-  fetchRecs();
+  fetchPage(0);
 
 })();
