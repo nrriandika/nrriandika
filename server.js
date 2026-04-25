@@ -601,6 +601,97 @@ app.get(
   }
 });
 
+// ─── Visitor Counter ────────────────────────────────────────────
+
+/** Hash an IP using HMAC-SHA256 for privacy (don't store raw IPs). */
+function hashIP(ip) {
+  return crypto
+    .createHmac('sha256', process.env.SESSION_SECRET || 'fallback-secret')
+    .update(ip || 'unknown')
+    .digest('hex')
+    .slice(0, 24);
+}
+
+/** Track a visit — increments counter, dedupes by IP per day */
+app.post('/api/visit', async (req, res) => {
+  if (!supabase) return res.json({ ok: true });
+
+  const ip =
+    req.ip ||
+    (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+    'unknown';
+
+  const ipHash = hashIP(ip);
+  const today = new Date().toISOString().slice(0, 10);
+
+  try {
+    // Check if this IP already visited today
+    const { data: existing } = await supabase
+      .from('visitors')
+      .select('visit_count')
+      .eq('ip_hash', ipHash)
+      .eq('visit_date', today)
+      .maybeSingle();
+
+    if (existing) {
+      // Increment count, update last_visit
+      await supabase
+        .from('visitors')
+        .update({
+          visit_count: (existing.visit_count || 1) + 1,
+          last_visit:  new Date().toISOString(),
+        })
+        .eq('ip_hash', ipHash)
+        .eq('visit_date', today);
+    } else {
+      // New visitor today — insert
+      await supabase.from('visitors').insert({
+        ip_hash:    ipHash,
+        visit_date: today,
+      });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('visit tracking error:', err.message);
+    res.json({ ok: true }); // fail silently — don't break UX for tracking errors
+  }
+});
+
+/** Get visitor stats — total all-time, today, this month */
+app.get('/api/stats', async (_req, res) => {
+  if (!supabase) return res.json({ total: 0, today: 0, thisMonth: 0 });
+
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const monthStart = new Date().toISOString().slice(0, 7) + '-01';
+
+    // Total unique visitor-days (count of rows in visitors)
+    const { count: total } = await supabase
+      .from('visitors')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: todayCount } = await supabase
+      .from('visitors')
+      .select('*', { count: 'exact', head: true })
+      .eq('visit_date', today);
+
+    const { count: monthCount } = await supabase
+      .from('visitors')
+      .select('*', { count: 'exact', head: true })
+      .gte('visit_date', monthStart);
+
+    res.json({
+      total:     total || 0,
+      today:     todayCount || 0,
+      thisMonth: monthCount || 0,
+    });
+  } catch (err) {
+    console.error('stats error:', err.message);
+    res.json({ total: 0, today: 0, thisMonth: 0 });
+  }
+});
+
 // ─── Recommendations (Supabase) ─────────────────────────────────
 
 /** Guard — return 503 if Supabase is not configured */

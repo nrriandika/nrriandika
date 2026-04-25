@@ -3674,6 +3674,56 @@ svg { display: block; }
 
 .footer-sep { opacity: 0.4; }
 
+/* ─── Visitor Counter ──────────────────────────────────────────── */
+.visitor-counter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255,255,255,0.05);
+  font-size: 12px;
+}
+
+.visitor-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+
+.visitor-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.visitor-num {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.visitor-label {
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.3px;
+}
+
+.visitor-sep {
+  color: var(--text-3);
+  opacity: 0.4;
+}
+
+@media (max-width: 640px) {
+  .visitor-counter { flex-wrap: wrap; gap: 6px; }
+  .visitor-num { font-size: 13px; }
+}
+
 /* ─── Reveal animation ──────────────────────────────────────────── */
 .reveal {
   opacity: 0;
