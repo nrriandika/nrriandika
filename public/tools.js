@@ -7,15 +7,15 @@
   // ─── Tools Data — edit/add tools here ─────────────────────────
   const TOOLS = [
     {
-      id: 'book-hunter',
-      name: 'Book Hunter',
-      desc: 'Auto-curated list of books on Shopee with 50%+ discount. Refreshes twice daily — never miss a great deal again.',
-      category: 'utility',
-      tags: ['Scraper', 'Cron', 'Books'],
+      id: 'book-recommender',
+      name: 'AI Book Recommender',
+      desc: 'Describe what you want to read in natural language. AI suggests 10 real books with covers, ratings, and Google Books links.',
+      category: 'ai',
+      tags: ['AI', 'Books', 'Google Books'],
       icon: '📚',
       color1: '#f97316',
       color2: '#fbbf24',
-      url: '/tools/book-hunter',
+      url: '/tools/book-recommender',
       status: 'live',
     },
   ];

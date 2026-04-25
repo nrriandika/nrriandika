@@ -7,9 +7,5 @@
     { "source": "/tools/:path*", "destination": "/api/index.js" },
     { "source": "/auth/:path*", "destination": "/api/index.js" },
     { "source": "/api/:path*", "destination": "/api/index.js" }
-  ],
-  "crons": [
-    { "path": "/api/cron/scrape-books", "schedule": "13 18 * * *" },
-    { "path": "/api/cron/scrape-books", "schedule": "47 5 * * *" }
   ]
 }

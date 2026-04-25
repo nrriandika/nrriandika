@@ -690,167 +690,195 @@ app.post('/api/recommendations/:id/like', requireSupabase, async (req, res) => {
   }
 });
 
-// ─── Book Hunter (Shopee scraper + cron) ────────────────────────
+// ─── Book Recommender (AI + Google Books) ──────────────────────
 
-const BOOK_HUNTER_KEYWORD = 'buku';
-const BOOK_HUNTER_MIN_DISCOUNT = 50;
+const BOOK_RECOMMENDER_PROMPT = `You are a deeply knowledgeable book curator with expertise across genres, eras, languages, and reading levels worldwide. You know fiction and non-fiction, mainstream bestsellers and hidden gems, in English, Indonesian, Japanese, and beyond.
 
-/** Get cached books (last successful scrape) */
-app.get('/api/book-hunter', async (_req, res) => {
-  if (!supabase) return res.status(503).json({ error: 'database_not_configured' });
+Given a natural-language prompt about what someone wants to read, recommend exactly 10 REAL, verifiable books that genuinely match. Mix popular favorites with hidden gems (60/40 ratio). Read between the lines — "buku buat self-improvement gak terlalu motivasional" wants gentler, science-backed self-help; "novel komedi Indonesia" wants Indonesian-language humor fiction.
 
-  try {
-    const { data: books, error } = await supabase
-      .from('book_hunter')
-      .select('*')
-      .order('discount_percent', { ascending: false })
-      .order('sold', { ascending: false })
-      .limit(60);
+Output ONLY valid JSON (no markdown fences, no commentary):
+{"books":[{"title":"Exact Book Title","author":"Author Full Name"}, ...]}
 
-    if (error) throw error;
+Rules:
+- Real books that exist on Google Books / Goodreads
+- Match the user's language and cultural context when relevant
+- No duplicates, no generic filler
+- Prioritize specificity and quality over popularity`;
 
-    const { data: lastRun } = await supabase
-      .from('book_hunter_runs')
-      .select('*')
-      .eq('status', 'success')
-      .order('ran_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+/** Ask Claude or Gemini for book suggestions from a natural-language prompt */
+async function generateBookSuggestions({ keyword, deep = false }) {
+  if (!keyword) throw new Error('Prompt is required');
 
-    res.json({
-      books: books || [],
-      lastRun: lastRun || null,
-      meta: {
-        keyword: BOOK_HUNTER_KEYWORD,
-        minDiscount: BOOK_HUNTER_MIN_DISCOUNT,
-      },
+  const userPrompt = String(keyword).trim().slice(0, 150);
+  const nonce = `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`;
+
+  let parsed;
+
+  if (deep) {
+    // Gemini with Google Search grounding for current books, niche/cultural context
+    if (GEMINI_KEYS.length === 0) throw new Error('No Gemini API keys configured');
+
+    const availableKeys = GEMINI_KEYS.filter(k => !isExhausted(k));
+    const keysToTry = availableKeys.length > 0 ? availableKeys : GEMINI_KEYS;
+
+    let lastErr;
+    for (let i = 0; i < keysToTry.length; i++) {
+      const key = keysToTry[i];
+      try {
+        const client = new GoogleGenAI({ apiKey: key });
+        const response = await client.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: `Find books for: "${userPrompt}"\n\n(Session ${nonce}. If the prompt mentions current events, slang, or niche topics — search the web first to understand context.)`,
+          config: {
+            systemInstruction: BOOK_RECOMMENDER_PROMPT + '\n\nIMPORTANT: Output must be pure JSON only. Start with { and end with }.',
+            temperature: 1.0,
+            tools: [{ googleSearch: {} }],
+          },
+        });
+
+        const text = response.text || response.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          const match = text.match(/\{[\s\S]*\}/);
+          if (match) parsed = JSON.parse(match[0]);
+          else throw new Error('Could not parse Gemini response');
+        }
+        break;
+      } catch (err) {
+        lastErr = err;
+        const isRateLimit = err.status === 429 || /quota|rate limit|exceeded|resource_exhausted/i.test(err.message || '');
+        if (isRateLimit) { markExhausted(key); continue; }
+        throw err;
+      }
+    }
+    if (!parsed) throw lastErr || new Error('All Gemini keys hit rate limit');
+
+  } else {
+    // Claude Haiku — fast default
+    if (!anthropic) throw new Error('ANTHROPIC_API_KEY not set');
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1200,
+      temperature: 1.0,
+      system: [
+        { type: 'text', text: BOOK_RECOMMENDER_PROMPT, cache_control: { type: 'ephemeral' } },
+      ],
+      messages: [{
+        role: 'user',
+        content: `Find books for: "${userPrompt}"\n\n(Session ${nonce} — surprise me with books I might not have heard before.)`
+      }],
     });
-  } catch (err) {
-    console.error('book-hunter fetch error:', err.message);
-    res.status(500).json({ error: 'fetch_failed' });
-  }
-});
 
-/** Scrape Shopee internal API for "buku" with discount filter.
- *  Routed through ScraperAPI to avoid Vercel datacenter IP block. */
-async function scrapeShopeeBooks() {
-  const SCRAPER_KEY = process.env.SCRAPER_API_KEY;
-  if (!SCRAPER_KEY) throw new Error('SCRAPER_API_KEY not set');
-
-  const shopeeUrl = 'https://shopee.co.id/api/v4/search/search_items?' + querystring.stringify({
-    by:        'pop',
-    keyword:   BOOK_HUNTER_KEYWORD,
-    limit:     60,
-    newest:    0,
-    order:     'desc',
-    page_type: 'search',
-    scenario:  'PAGE_GLOBAL_SEARCH',
-    version:   2,
-  });
-
-  // ScraperAPI as proxy — Shopee is "heavily protected" so we need
-  // ultra_premium proxies (25 credits/req) to bypass anti-bot.
-  const proxyUrl = 'https://api.scraperapi.com/?' + querystring.stringify({
-    api_key:        SCRAPER_KEY,
-    url:            shopeeUrl,
-    country_code:   'id',
-    ultra_premium:  'true',
-    keep_headers:   'true',
-  });
-
-  const response = await axios.get(proxyUrl, {
-    timeout: 50000, // ScraperAPI may take 5-30s; allow up to 50s
-    validateStatus: null,
-    headers: {
-      'Accept':           'application/json',
-      'Accept-Language':  'id-ID,id;q=0.9,en;q=0.8',
-      'Referer':          `https://shopee.co.id/search?keyword=${BOOK_HUNTER_KEYWORD}`,
-      'X-API-SOURCE':     'pc',
-      'X-Shopee-Language':'id',
-    },
-  });
-
-  if (response.status !== 200 || !response.data?.items) {
-    const preview = typeof response.data === 'string'
-      ? response.data.slice(0, 200)
-      : JSON.stringify(response.data).slice(0, 200);
-    throw new Error(`Shopee via ScraperAPI returned ${response.status}: ${preview}`);
-  }
-
-  // Filter discount >= MIN_DISCOUNT
-  const filtered = response.data.items
-    .map(({ item_basic: it }) => it ? {
-      shopee_id:        String(it.itemid),
-      name:             it.name,
-      price:            Math.round(it.price / 100000),
-      original_price:   Math.round(it.price_before_discount / 100000),
-      discount_percent: parseInt(it.raw_discount) || 0,
-      image_url:        it.image ? `https://cf.shopee.co.id/file/${it.image}` : null,
-      product_url:      `https://shopee.co.id/product/${it.shopid}/${it.itemid}`,
-      shop_name:        it.shop_name || null,
-      shop_location:    it.shop_location || null,
-      rating:           it.item_rating?.rating_star ? Number(it.item_rating.rating_star.toFixed(2)) : null,
-      sold:             it.historical_sold || it.sold || 0,
-    } : null)
-    .filter(Boolean)
-    .filter(b => b.discount_percent >= BOOK_HUNTER_MIN_DISCOUNT);
-
-  return filtered;
-}
-
-/** Cron endpoint — called by Vercel Cron 2x/day with random delay */
-app.get('/api/cron/scrape-books', async (req, res) => {
-  // Vercel Cron sends Authorization: Bearer <CRON_SECRET>
-  const authHeader = req.headers.authorization || '';
-  const expected = `Bearer ${process.env.CRON_SECRET || ''}`;
-  if (!process.env.CRON_SECRET || authHeader !== expected) {
-    return res.status(401).json({ error: 'unauthorized' });
-  }
-
-  if (!supabase) return res.status(503).json({ error: 'database_not_configured' });
-
-  // Random delay 0-25 seconds (ScraperAPI itself takes 5-30s, so total ≤ 60s)
-  const delaySeconds = Math.floor(Math.random() * 25);
-  await new Promise(r => setTimeout(r, delaySeconds * 1000));
-
-  let books = [];
-  let status = 'success';
-  let errorMessage = null;
-
-  try {
-    books = await scrapeShopeeBooks();
-  } catch (err) {
-    status = 'failed';
-    errorMessage = err.message?.slice(0, 500) || String(err).slice(0, 500);
-    console.error('scrape-books error:', errorMessage);
-  }
-
-  let inserted = 0;
-  if (books.length > 0) {
-    const { data, error } = await supabase
-      .from('book_hunter')
-      .upsert(books.map(b => ({ ...b, scraped_at: new Date().toISOString() })), { onConflict: 'shopee_id' })
-      .select();
-
-    if (error) {
-      status = 'failed';
-      errorMessage = (errorMessage || '') + ' | DB: ' + error.message;
-    } else {
-      inserted = data?.length || 0;
+    const content = response.content?.[0]?.text || '';
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('Could not parse Claude response');
     }
   }
 
-  await supabase.from('book_hunter_runs').insert({
-    ran_at:         new Date().toISOString(),
-    status,
-    items_found:    books.length,
-    items_inserted: inserted,
-    delay_seconds:  delaySeconds,
-    error_message:  errorMessage,
+  const list = Array.isArray(parsed) ? parsed : (parsed.books || parsed.recommendations || []);
+  return list.filter(b => b && b.title && b.author).slice(0, 10);
+}
+
+/** Look up a book on Google Books to get cover, ratings, description */
+async function googleBooksLookup(title, author) {
+  const query = `intitle:"${title}" inauthor:"${author}"`;
+  const url = `https://www.googleapis.com/books/v1/volumes?` + querystring.stringify({
+    q:           query,
+    maxResults:  '1',
+    printType:   'books',
+    langRestrict: '',
   });
 
-  res.json({ status, found: books.length, inserted, delay: delaySeconds, error: errorMessage });
-});
+  try {
+    const { data } = await axios.get(url, { timeout: 8000, validateStatus: null });
+    const item = data?.items?.[0];
+    if (!item) return null;
+    const v = item.volumeInfo || {};
+
+    return {
+      id:            item.id,
+      title:         v.title || title,
+      subtitle:      v.subtitle || null,
+      authors:       v.authors || [author],
+      description:   v.description ? String(v.description).slice(0, 280) : null,
+      published:     v.publishedDate || null,
+      pageCount:     v.pageCount || null,
+      categories:    v.categories || [],
+      rating:        v.averageRating || null,
+      ratingsCount:  v.ratingsCount || 0,
+      image:         v.imageLinks?.thumbnail?.replace('http://', 'https://')
+                    || v.imageLinks?.smallThumbnail?.replace('http://', 'https://')
+                    || null,
+      previewLink:   v.previewLink || null,
+      infoLink:      v.infoLink || null,
+      language:      v.language || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** AI-powered book recommender. Same rate limit + dual-mode pattern as Song Finder. */
+app.get(
+  '/api/recommend-books',
+  rateLimit('recommend-books', 10, (req) => req.query.deep === 'true' ? 2 : 1),
+  async (req, res) => {
+    try {
+      const keyword = req.query.keyword
+        ? String(req.query.keyword).trim().slice(0, 150)
+        : '';
+      const deep = req.query.deep === 'true';
+
+      if (!keyword) {
+        return res.status(400).json({ error: 'no_prompt', message: 'Please describe what you want to read' });
+      }
+
+      // Step 1: Ask AI for suggestions
+      let suggestions;
+      try {
+        suggestions = await generateBookSuggestions({ keyword, deep });
+      } catch (err) {
+        console.error('recommend-books AI error:', err.response?.data || err.message);
+        return res.status(502).json({ error: 'ai_failed', message: 'AI suggestion failed. ' + err.message });
+      }
+
+      if (!suggestions || suggestions.length === 0) {
+        return res.json({ query: keyword, books: [], deep, rateLimit: req.rateLimit });
+      }
+
+      // Step 2: Enrich with Google Books (parallel)
+      const enriched = await Promise.all(
+        suggestions.map(s => googleBooksLookup(s.title, s.author).then(book => book || {
+          // Fallback when Google Books has no match — use AI suggestion as-is
+          id:           `ai-${s.title.slice(0, 30)}`,
+          title:        s.title,
+          authors:      [s.author],
+          image:        null,
+          rating:       null,
+          ratingsCount: 0,
+          infoLink:     `https://www.google.com/search?q=${encodeURIComponent(s.title + ' ' + s.author + ' book')}`,
+          fallback:     true,
+        }))
+      );
+
+      res.json({
+        query: keyword,
+        books: enriched,
+        deep,
+        rateLimit: req.rateLimit,
+      });
+    } catch (err) {
+      console.error('recommend-books error:', err.message);
+      res.status(500).json({ error: 'failed', message: err.message });
+    }
+  }
+);
 
 // ─── SPA fallback ────────────────────────────────────────────────
 // Tools page (separate from main SPA)
@@ -858,9 +886,9 @@ app.get(['/tools', '/tools/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tools.html'));
 });
 
-// Book Hunter sub-page
-app.get(['/tools/book-hunter', '/tools/book-hunter/'], (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'book-hunter.html'));
+// Book Recommender sub-page
+app.get(['/tools/book-recommender', '/tools/book-recommender/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'book-recommender.html'));
 });
 
 app.get('*', (_req, res) => {

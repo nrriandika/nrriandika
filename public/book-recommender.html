@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Book Recommender — nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page-tools">
+
+  <!-- ─── Space Background ──────────────────────────────────── -->
+  <div class="space-planet space-planet--1">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-planet space-planet--2">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-orbit space-orbit--1"></div>
+  <div class="space-orbit space-orbit--2"></div>
+  <div class="space-orbit space-orbit--3"></div>
+
+  <!-- ─── Navigation ─────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <a class="nav-logo" href="/">
+      <span class="logo-dot"></span>
+      <span>nrriandika</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#work" class="nav-link">Work</a></li>
+      <li><a href="/#game" class="nav-link">Game</a></li>
+      <li><a href="/#music" class="nav-link">Music</a></li>
+      <li><a href="/tools" class="nav-link nav-link--special active">Tools</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── Hero ───────────────────────────────────────────────── -->
+  <section class="br-hero">
+    <div class="container">
+      <a href="/tools" class="tools-back">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to tools
+      </a>
+
+      <div class="br-icon-wrap">
+        <span class="br-icon">📚</span>
+      </div>
+
+      <h1 class="br-title">AI Book Recommender</h1>
+      <p class="br-subtitle">Tell me what you want to read. I'll find 10 books that match — real covers, ratings, and links from Google Books.</p>
+    </div>
+  </section>
+
+  <!-- ─── Form Section ────────────────────────────────────────── -->
+  <section class="br-section">
+    <div class="container">
+      <div class="br-form">
+        <!-- Prompt input -->
+        <div class="finder-prompt-box br-prompt-box">
+          <div class="finder-prompt-icon">
+            <svg viewBox="0 0 20 20" fill="none" width="18"><path d="M10 2v4M10 14v4M2 10h4M14 10h4M4 4l3 3M13 13l3 3M4 16l3-3M13 7l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <textarea id="br-prompt" class="finder-prompt" rows="2" maxlength="150" placeholder=""></textarea>
+          <div class="finder-prompt-footer">
+            <span class="finder-hint">↵ Enter to search</span>
+            <span class="finder-counter"><span id="br-counter-num">0</span>/150</span>
+          </div>
+        </div>
+
+        <!-- Quick starters -->
+        <div class="finder-quickstart">
+          <span class="finder-quickstart-label">Try</span>
+          <div class="finder-quickstart-chips" id="br-quickstart">
+            <button class="finder-qs-chip" data-prompt="Buku self-improvement yang berbasis sains, gak terlalu motivasional"><span>🧠</span> Science-based self-help</button>
+            <button class="finder-qs-chip" data-prompt="Novel romance Indonesia kontemporer 2020an"><span>💕</span> Romance Indonesia</button>
+            <button class="finder-qs-chip" data-prompt="Sci-fi klasik yang cocok buat pemula"><span>🚀</span> Sci-fi for beginners</button>
+            <button class="finder-qs-chip" data-prompt="Buku pendek yang bisa selesai dalam 1-2 hari"><span>📖</span> Short reads</button>
+            <button class="finder-qs-chip" data-prompt="Memoir yang mengubah cara pandang"><span>✨</span> Mind-shifting memoirs</button>
+            <button class="finder-qs-chip" data-prompt="Novel komedi Indonesia yang bikin ketawa"><span>😄</span> Indo komedi</button>
+            <button class="finder-qs-chip" data-prompt="Buku tentang produktivitas dan habit yang research-based"><span>⚡</span> Productivity</button>
+            <button class="finder-qs-chip" data-prompt="Novel mystery thriller dengan plot twist gila"><span>🔍</span> Mystery thriller</button>
+          </div>
+        </div>
+
+        <!-- Deep Search toggle + Submit -->
+        <div class="finder-actions">
+          <label class="finder-deep" id="br-deep-toggle">
+            <input type="checkbox" id="br-deep" />
+            <span class="finder-deep-track">
+              <span class="finder-deep-thumb"></span>
+            </span>
+            <span class="finder-deep-content">
+              <span class="finder-deep-main">
+                <span class="finder-deep-icon">⚡</span>
+                <span class="finder-deep-label">Deep Search</span>
+                <span class="finder-deep-cost">2x</span>
+              </span>
+              <span class="finder-deep-desc">Gemini · web-grounded, knows niche &amp; current books</span>
+            </span>
+          </label>
+
+          <div class="finder-actions-right">
+            <button class="btn btn-ghost btn-sm finder-clear" id="br-clear" type="button">Clear</button>
+            <button class="btn btn-primary finder-submit" id="br-submit">
+              <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="finder-submit-text">Find Books</span>
+              <span class="finder-submit-sparkle">✦</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="br-results" id="br-results"></div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ───────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-name">nrriandika</span>
+      <span class="footer-sep">·</span>
+      <span class="footer-year" id="footer-year"></span>
+      <span class="footer-sep">·</span>
+      <span class="footer-made">Made with code &amp; curiosity</span>
+    </div>
+  </footer>
+
+  <script src="/book-recommender.js"></script>
+</body>
+</html>
