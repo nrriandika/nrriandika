@@ -690,10 +690,170 @@ app.post('/api/recommendations/:id/like', requireSupabase, async (req, res) => {
   }
 });
 
+// ─── Book Hunter (Shopee scraper + cron) ────────────────────────
+
+const BOOK_HUNTER_KEYWORD = 'buku';
+const BOOK_HUNTER_MIN_DISCOUNT = 50;
+
+/** Get cached books (last successful scrape) */
+app.get('/api/book-hunter', async (_req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'database_not_configured' });
+
+  try {
+    const { data: books, error } = await supabase
+      .from('book_hunter')
+      .select('*')
+      .order('discount_percent', { ascending: false })
+      .order('sold', { ascending: false })
+      .limit(60);
+
+    if (error) throw error;
+
+    const { data: lastRun } = await supabase
+      .from('book_hunter_runs')
+      .select('*')
+      .eq('status', 'success')
+      .order('ran_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    res.json({
+      books: books || [],
+      lastRun: lastRun || null,
+      meta: {
+        keyword: BOOK_HUNTER_KEYWORD,
+        minDiscount: BOOK_HUNTER_MIN_DISCOUNT,
+      },
+    });
+  } catch (err) {
+    console.error('book-hunter fetch error:', err.message);
+    res.status(500).json({ error: 'fetch_failed' });
+  }
+});
+
+/** Scrape Shopee internal API for "buku" with discount filter */
+async function scrapeShopeeBooks() {
+  const url = 'https://shopee.co.id/api/v4/search/search_items';
+  const params = {
+    by:        'pop',
+    keyword:   BOOK_HUNTER_KEYWORD,
+    limit:     60,
+    newest:    0,
+    order:     'desc',
+    page_type: 'search',
+    scenario:  'PAGE_GLOBAL_SEARCH',
+    version:   2,
+  };
+
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  ];
+
+  const response = await axios.get(url, {
+    params,
+    timeout: 15000,
+    headers: {
+      'User-Agent':       userAgents[Math.floor(Math.random() * userAgents.length)],
+      'Accept':           'application/json',
+      'Accept-Language':  'id-ID,id;q=0.9,en;q=0.8',
+      'Referer':          `https://shopee.co.id/search?keyword=${BOOK_HUNTER_KEYWORD}`,
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-API-SOURCE':     'pc',
+      'X-Shopee-Language':'id',
+    },
+    validateStatus: null,
+  });
+
+  if (response.status !== 200 || !response.data?.items) {
+    throw new Error(`Shopee returned ${response.status}: ${JSON.stringify(response.data).slice(0, 200)}`);
+  }
+
+  // Filter discount >= MIN_DISCOUNT
+  const filtered = response.data.items
+    .map(({ item_basic: it }) => it ? {
+      shopee_id:        String(it.itemid),
+      name:             it.name,
+      price:            Math.round(it.price / 100000),
+      original_price:   Math.round(it.price_before_discount / 100000),
+      discount_percent: parseInt(it.raw_discount) || 0,
+      image_url:        it.image ? `https://cf.shopee.co.id/file/${it.image}` : null,
+      product_url:      `https://shopee.co.id/product/${it.shopid}/${it.itemid}`,
+      shop_name:        it.shop_name || null,
+      shop_location:    it.shop_location || null,
+      rating:           it.item_rating?.rating_star ? Number(it.item_rating.rating_star.toFixed(2)) : null,
+      sold:             it.historical_sold || it.sold || 0,
+    } : null)
+    .filter(Boolean)
+    .filter(b => b.discount_percent >= BOOK_HUNTER_MIN_DISCOUNT);
+
+  return filtered;
+}
+
+/** Cron endpoint — called by Vercel Cron 2x/day with random delay */
+app.get('/api/cron/scrape-books', async (req, res) => {
+  // Vercel Cron sends Authorization: Bearer <CRON_SECRET>
+  const authHeader = req.headers.authorization || '';
+  const expected = `Bearer ${process.env.CRON_SECRET || ''}`;
+  if (!process.env.CRON_SECRET || authHeader !== expected) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+
+  if (!supabase) return res.status(503).json({ error: 'database_not_configured' });
+
+  // Random delay 0-180 seconds → "jam 1 lebih beberapa menit acak"
+  const delaySeconds = Math.floor(Math.random() * 180);
+  await new Promise(r => setTimeout(r, delaySeconds * 1000));
+
+  let books = [];
+  let status = 'success';
+  let errorMessage = null;
+
+  try {
+    books = await scrapeShopeeBooks();
+  } catch (err) {
+    status = 'failed';
+    errorMessage = err.message?.slice(0, 500) || String(err).slice(0, 500);
+    console.error('scrape-books error:', errorMessage);
+  }
+
+  let inserted = 0;
+  if (books.length > 0) {
+    const { data, error } = await supabase
+      .from('book_hunter')
+      .upsert(books.map(b => ({ ...b, scraped_at: new Date().toISOString() })), { onConflict: 'shopee_id' })
+      .select();
+
+    if (error) {
+      status = 'failed';
+      errorMessage = (errorMessage || '') + ' | DB: ' + error.message;
+    } else {
+      inserted = data?.length || 0;
+    }
+  }
+
+  await supabase.from('book_hunter_runs').insert({
+    ran_at:         new Date().toISOString(),
+    status,
+    items_found:    books.length,
+    items_inserted: inserted,
+    delay_seconds:  delaySeconds,
+    error_message:  errorMessage,
+  });
+
+  res.json({ status, found: books.length, inserted, delay: delaySeconds, error: errorMessage });
+});
+
 // ─── SPA fallback ────────────────────────────────────────────────
 // Tools page (separate from main SPA)
 app.get(['/tools', '/tools/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tools.html'));
+});
+
+// Book Hunter sub-page
+app.get(['/tools/book-hunter', '/tools/book-hunter/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'book-hunter.html'));
 });
 
 app.get('*', (_req, res) => {
