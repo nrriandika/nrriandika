@@ -691,6 +691,11 @@ app.post('/api/recommendations/:id/like', requireSupabase, async (req, res) => {
 });
 
 // ─── SPA fallback ────────────────────────────────────────────────
+// Tools page (separate from main SPA)
+app.get(['/tools', '/tools/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'tools.html'));
+});
+
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tools — nrriandika</title>
+  <link rel="icon" href="src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="page-tools">
+
+  <!-- ─── Space Background ──────────────────────────────────── -->
+  <div class="space-planet space-planet--1">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-planet space-planet--2">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-orbit space-orbit--1"></div>
+  <div class="space-orbit space-orbit--2"></div>
+  <div class="space-orbit space-orbit--3"></div>
+
+  <!-- ─── Navigation ─────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <a class="nav-logo" href="/">
+      <span class="logo-dot"></span>
+      <span>nrriandika</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#work" class="nav-link">Work</a></li>
+      <li><a href="/#game" class="nav-link">Game</a></li>
+      <li><a href="/#music" class="nav-link">Music</a></li>
+      <li><a href="/tools" class="nav-link active">Tools</a></li>
+    </ul>
+    <div class="nav-indicator"></div>
+  </nav>
+
+  <!-- ─── Tools Hero ─────────────────────────────────────────── -->
+  <section class="tools-hero">
+    <div class="container">
+      <a href="/" class="tools-back">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to home
+      </a>
+      <span class="section-tag">04 — Tools</span>
+      <h1 class="tools-title">
+        Tools &amp; <span class="accent">APIs</span>
+      </h1>
+      <p class="tools-subtitle">A collection of mini apps and APIs I've built. Some are public, some are internal experiments.</p>
+
+      <div class="tools-stats">
+        <div class="tools-stat">
+          <span class="tools-stat-num" id="tools-count">0</span>
+          <span class="tools-stat-label">Tools</span>
+        </div>
+        <div class="tools-stat">
+          <span class="tools-stat-num" id="tools-public-count">0</span>
+          <span class="tools-stat-label">Public</span>
+        </div>
+        <div class="tools-stat">
+          <span class="tools-stat-num" id="tools-cat-count">0</span>
+          <span class="tools-stat-label">Categories</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Filter & Search ─────────────────────────────────────── -->
+  <section class="tools-section">
+    <div class="container">
+      <div class="tools-controls">
+        <div class="tools-search">
+          <svg viewBox="0 0 16 16" fill="none" width="14"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="tools-search-input" placeholder="Search tools..." />
+        </div>
+        <div class="tools-filter" id="tools-filter">
+          <button class="tools-filter-btn tools-filter-btn--active" data-filter="all">All</button>
+          <button class="tools-filter-btn" data-filter="api">API</button>
+          <button class="tools-filter-btn" data-filter="web">Web</button>
+          <button class="tools-filter-btn" data-filter="utility">Utility</button>
+          <button class="tools-filter-btn" data-filter="ai">AI</button>
+        </div>
+      </div>
+
+      <!-- Tools Grid -->
+      <div class="tools-grid" id="tools-grid">
+        <!-- Cards rendered by tools.js -->
+      </div>
+
+      <div class="tools-empty" id="tools-empty" style="display:none">
+        <span class="tools-empty-icon">🔧</span>
+        <p>No tools match your search.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ───────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-name">nrriandika</span>
+      <span class="footer-sep">·</span>
+      <span class="footer-year" id="footer-year"></span>
+      <span class="footer-sep">·</span>
+      <span class="footer-made">Made with code &amp; curiosity</span>
+    </div>
+  </footer>
+
+  <script src="tools.js"></script>
+</body>
+</html>
