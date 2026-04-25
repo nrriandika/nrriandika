@@ -748,13 +748,14 @@ async function scrapeShopeeBooks() {
     version:   2,
   });
 
-  // ScraperAPI as proxy — handles residential IP rotation + headers.
-  // country_code=id ensures Indonesian IP for region-specific results.
+  // ScraperAPI as proxy — Shopee is "heavily protected" so we need
+  // ultra_premium proxies (25 credits/req) to bypass anti-bot.
   const proxyUrl = 'https://api.scraperapi.com/?' + querystring.stringify({
-    api_key:      SCRAPER_KEY,
-    url:          shopeeUrl,
-    country_code: 'id',
-    keep_headers: 'true',
+    api_key:        SCRAPER_KEY,
+    url:            shopeeUrl,
+    country_code:   'id',
+    ultra_premium:  'true',
+    keep_headers:   'true',
   });
 
   const response = await axios.get(proxyUrl, {
