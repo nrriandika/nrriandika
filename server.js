@@ -731,10 +731,13 @@ app.get('/api/book-hunter', async (_req, res) => {
   }
 });
 
-/** Scrape Shopee internal API for "buku" with discount filter */
+/** Scrape Shopee internal API for "buku" with discount filter.
+ *  Routed through ScraperAPI to avoid Vercel datacenter IP block. */
 async function scrapeShopeeBooks() {
-  const url = 'https://shopee.co.id/api/v4/search/search_items';
-  const params = {
+  const SCRAPER_KEY = process.env.SCRAPER_API_KEY;
+  if (!SCRAPER_KEY) throw new Error('SCRAPER_API_KEY not set');
+
+  const shopeeUrl = 'https://shopee.co.id/api/v4/search/search_items?' + querystring.stringify({
     by:        'pop',
     keyword:   BOOK_HUNTER_KEYWORD,
     limit:     60,
@@ -743,31 +746,34 @@ async function scrapeShopeeBooks() {
     page_type: 'search',
     scenario:  'PAGE_GLOBAL_SEARCH',
     version:   2,
-  };
+  });
 
-  const userAgents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-  ];
+  // ScraperAPI as proxy — handles residential IP rotation + headers.
+  // country_code=id ensures Indonesian IP for region-specific results.
+  const proxyUrl = 'https://api.scraperapi.com/?' + querystring.stringify({
+    api_key:      SCRAPER_KEY,
+    url:          shopeeUrl,
+    country_code: 'id',
+    keep_headers: 'true',
+  });
 
-  const response = await axios.get(url, {
-    params,
-    timeout: 15000,
+  const response = await axios.get(proxyUrl, {
+    timeout: 50000, // ScraperAPI may take 5-30s; allow up to 50s
+    validateStatus: null,
     headers: {
-      'User-Agent':       userAgents[Math.floor(Math.random() * userAgents.length)],
       'Accept':           'application/json',
       'Accept-Language':  'id-ID,id;q=0.9,en;q=0.8',
       'Referer':          `https://shopee.co.id/search?keyword=${BOOK_HUNTER_KEYWORD}`,
-      'X-Requested-With': 'XMLHttpRequest',
       'X-API-SOURCE':     'pc',
       'X-Shopee-Language':'id',
     },
-    validateStatus: null,
   });
 
   if (response.status !== 200 || !response.data?.items) {
-    throw new Error(`Shopee returned ${response.status}: ${JSON.stringify(response.data).slice(0, 200)}`);
+    const preview = typeof response.data === 'string'
+      ? response.data.slice(0, 200)
+      : JSON.stringify(response.data).slice(0, 200);
+    throw new Error(`Shopee via ScraperAPI returned ${response.status}: ${preview}`);
   }
 
   // Filter discount >= MIN_DISCOUNT
@@ -802,8 +808,8 @@ app.get('/api/cron/scrape-books', async (req, res) => {
 
   if (!supabase) return res.status(503).json({ error: 'database_not_configured' });
 
-  // Random delay 0-180 seconds → "jam 1 lebih beberapa menit acak"
-  const delaySeconds = Math.floor(Math.random() * 180);
+  // Random delay 0-25 seconds (ScraperAPI itself takes 5-30s, so total ≤ 60s)
+  const delaySeconds = Math.floor(Math.random() * 25);
   await new Promise(r => setTimeout(r, delaySeconds * 1000));
 
   let books = [];
