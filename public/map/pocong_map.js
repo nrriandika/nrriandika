@@ -63,17 +63,21 @@
       center: [-2.5, 118.0],
       zoom: 5,
       zoomControl: false,       // we place it manually at bottomright
-      attributionControl: true,
+      attributionControl: false,
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // CartoDB Dark Matter tiles (free, no API key)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(map);
+
+    // Custom attribution
+    L.control.attribution({ position: 'bottomright', prefix: '<a href="https://leafletjs.com" target="_blank">Leaflet</a>' })
+      .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>')
+      .addTo(map);
 
     // Disable map click propagation to modal
     map.on('click', onMapClick);

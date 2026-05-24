@@ -1145,7 +1145,7 @@ app.post('/api/pocong/submit', async (req, res) => {
     await supabase.from('pocong_submit_log').insert({ ip_hash: ipHash });
   }
 
-  res.json({ ok: true, message: 'Laporan berhasil dikirim! Terima kasih.' });
+  res.json({ ok: true, message: 'Laporan berhasil dikirim! Terima kasih.', _debug: { your_hash: ipHash, verified } });
 });
 
 app.get('*', (_req, res) => {
