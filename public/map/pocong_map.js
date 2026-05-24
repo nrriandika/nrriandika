@@ -204,7 +204,13 @@
   }
 
   function renderIncidentList(data) {
-    const filtered = activeFilter === 'all' ? data : data.filter(d => d.status === activeFilter);
+    const filtered = (activeFilter === 'all' ? data : data.filter(d => d.status === activeFilter))
+      .slice()
+      .sort((a, b) => {
+        const da = a.tgl ? new Date(a.tgl) : new Date(a.created_at);
+        const db = b.tgl ? new Date(b.tgl) : new Date(b.created_at);
+        return db - da;
+      });
 
     if (filtered.length === 0) {
       incidentList.innerHTML = '<div class="incident-loading">Tidak ada data.</div>';
