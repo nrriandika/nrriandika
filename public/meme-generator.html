@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meme Generator — nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="page-tools">
+
+  <!-- ─── Space Background ──────────────────────────────────── -->
+  <div class="space-planet space-planet--1">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-planet space-planet--2">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-orbit space-orbit--1"></div>
+  <div class="space-orbit space-orbit--2"></div>
+  <div class="space-orbit space-orbit--3"></div>
+
+  <!-- ─── Navigation ─────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <a class="nav-logo" href="/">
+      <span class="logo-dot"></span>
+      <span>nrriandika</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#work" class="nav-link">Work</a></li>
+      <li><a href="/#game" class="nav-link">Game</a></li>
+      <li><a href="/#music" class="nav-link">Music</a></li>
+      <li><a href="/tools" class="nav-link nav-link--special active">Tools</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── Hero ───────────────────────────────────────────────── -->
+  <section class="br-hero">
+    <div class="container">
+      <a href="/tools" class="tools-back">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to tools
+      </a>
+
+      <div class="br-icon-wrap">
+        <span class="br-icon">😹</span>
+      </div>
+
+      <h1 class="br-title">Meme Generator</h1>
+      <p class="br-subtitle">Caption or create your own meme, because meme is for everyone 😹</p>
+    </div>
+  </section>
+
+  <!-- ─── Main Section ──────────────────────────────────────── -->
+  <section class="mg-section">
+    <div class="container">
+
+      <!-- Gallery view -->
+      <div id="mg-gallery-section">
+
+        <!-- Upload your own -->
+        <div class="mg-upload-area" id="mg-upload-area">
+          <input type="file" id="mg-file-input" accept="image/jpeg,image/png,image/gif,image/webp" hidden />
+          <div class="mg-upload-inner" id="mg-upload-drop">
+            <div class="mg-upload-icon">🖼️</div>
+            <p class="mg-upload-title">Upload your own template</p>
+            <p class="mg-upload-sub">JPG, PNG, GIF, WebP · max 8 MB</p>
+            <button class="btn btn-ghost btn-sm mg-upload-btn" id="mg-upload-btn" type="button">Choose file</button>
+          </div>
+          <div class="mg-upload-progress" id="mg-upload-progress" style="display:none">
+            <div class="mg-upload-bar"><div class="mg-upload-fill" id="mg-upload-fill"></div></div>
+            <span id="mg-upload-status">Uploading…</span>
+          </div>
+        </div>
+
+        <div class="mg-divider"><span>or pick a popular template</span></div>
+
+        <div class="mg-search-wrap">
+          <svg viewBox="0 0 16 16" fill="none" width="14"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="mg-search" placeholder="Search meme templates…" class="mg-search-input" />
+          <span class="mg-count" id="mg-count"></span>
+        </div>
+
+        <div id="mg-loading" class="mg-loading">
+          <div class="mg-loading-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <p>Loading templates…</p>
+        </div>
+
+        <div class="mg-gallery" id="mg-gallery"></div>
+      </div>
+
+      <!-- Editor view -->
+      <div id="mg-editor" class="mg-editor" style="display:none">
+        <div class="mg-editor-header">
+          <button class="mg-back-btn" id="mg-back">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Templates
+          </button>
+          <span class="mg-editor-title" id="mg-template-name"></span>
+          <button class="btn btn-primary mg-download-btn" id="mg-download">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 3v7M5 7l3 3 3-3M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download
+          </button>
+        </div>
+
+        <div class="mg-editor-layout">
+          <!-- Preview -->
+          <div class="mg-preview-wrap" id="mg-preview">
+            <img id="mg-preview-img" class="mg-preview-img" alt="Meme template" />
+            <div class="mg-overlay" id="mg-overlay"></div>
+            <div class="mg-drag-hint" id="mg-drag-hint">
+              <svg viewBox="0 0 16 16" fill="none" width="12"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Drag text to reposition
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="mg-controls" id="mg-controls">
+            <div class="mg-controls-inner">
+              <div class="mg-controls-header">
+                <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Text Controls
+              </div>
+              <div id="mg-text-inputs" class="mg-text-inputs"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── Footer ───────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-name">nrriandika</span>
+      <span class="footer-sep">·</span>
+      <span class="footer-year" id="footer-year"></span>
+      <span class="footer-sep">·</span>
+      <span class="footer-made">Made with code &amp; curiosity</span>
+    </div>
+    <div class="container visitor-counter">
+      <span class="visitor-dot"></span>
+      <span class="visitor-stat">
+        <span class="visitor-num" id="visitor-today">0</span>
+        <span class="visitor-label">today</span>
+      </span>
+      <span class="visitor-sep">·</span>
+      <span class="visitor-stat">
+        <span class="visitor-num" id="visitor-total">0</span>
+        <span class="visitor-label">total visits</span>
+      </span>
+    </div>
+  </footer>
+
+  <script src="/meme-generator.js"></script>
+  <script src="/visitor.js" defer></script>
+</body>
+</html>

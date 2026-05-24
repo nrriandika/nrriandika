@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peta Terror Pocong 2026 — nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/map/pocong_map.css" />
+</head>
+<body>
+
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <span class="brand-ghost">👻</span>
+        <div>
+          <h1 class="brand-title">Peta Terror Pocong</h1>
+          <p class="brand-sub">Indonesia · Real-time Report</p>
+        </div>
+      </div>
+      <button class="sidebar-collapse" id="sidebar-collapse" title="Sembunyikan">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <span class="stat-num" id="stat-total">–</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="stat-card stat-card--benar">
+        <span class="stat-num" id="stat-benar">–</span>
+        <span class="stat-lbl">Benar</span>
+      </div>
+      <div class="stat-card stat-card--hoax">
+        <span class="stat-num" id="stat-hoax">–</span>
+        <span class="stat-lbl">Hoax</span>
+      </div>
+      <div class="stat-card stat-card--unverif">
+        <span class="stat-num" id="stat-unverif">–</span>
+        <span class="stat-lbl">Unverified</span>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="panel-section">
+      <p class="panel-label">Filter Status</p>
+      <div class="filter-group" id="filter-group">
+        <button class="flt-btn flt-btn--active" data-status="all">Semua</button>
+        <button class="flt-btn flt-btn--benar"   data-status="Benar">✓ Benar</button>
+        <button class="flt-btn flt-btn--hoax"    data-status="Hoax">✗ Hoax</button>
+        <button class="flt-btn flt-btn--unverif" data-status="Belum Diverifikasi">? Belum Verif</button>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="panel-section">
+      <p class="panel-label">Legenda</p>
+      <div class="legend">
+        <div class="legend-row">
+          <span class="lgnd-dot lgnd-dot--benar"></span>
+          <span>Benar / Dikonfirmasi</span>
+        </div>
+        <div class="legend-row">
+          <span class="lgnd-dot lgnd-dot--hoax"></span>
+          <span>Hoax / Terbantah</span>
+        </div>
+        <div class="legend-row">
+          <span class="lgnd-dot lgnd-dot--unverif"></span>
+          <span>Belum Diverifikasi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident list -->
+    <div class="panel-section panel-section--grow">
+      <p class="panel-label">Kejadian Terbaru</p>
+      <div class="incident-list" id="incident-list">
+        <div class="incident-loading">Memuat data…</div>
+      </div>
+    </div>
+
+    <!-- Add report -->
+    <div class="sidebar-footer">
+      <button class="btn-add" id="btn-add">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Tambah Laporan
+      </button>
+      <p class="footer-note">Maks. 3 laporan per 24 jam</p>
+      <a href="/" class="footer-back">← nrriandika.com</a>
+    </div>
+
+  </aside>
+
+  <!-- ── Map area ──────────────────────────────────────────── -->
+  <div class="map-area">
+    <button class="map-menu-btn" id="map-menu-btn" title="Buka panel">
+      <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div id="map"></div>
+    <!-- Picking mode overlay hint -->
+    <div class="pick-hint" id="pick-hint" style="display:none">
+      <svg viewBox="0 0 16 16" fill="none" width="16"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Klik di peta untuk memilih lokasi
+      <button id="pick-cancel">Batal</button>
+    </div>
+  </div>
+
+  <!-- ── Submit Modal ──────────────────────────────────────── -->
+  <div class="modal-wrap" id="modal-wrap" style="display:none">
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal" id="modal" role="dialog" aria-modal="true">
+
+      <div class="modal-hd">
+        <h2 class="modal-title">Tambah Laporan Kejadian</h2>
+        <button class="modal-x" id="modal-close">×</button>
+      </div>
+
+      <!-- Step 1: Location -->
+      <div class="modal-step" id="step-location">
+        <p class="step-label">1 / 2 — Pilih Lokasi</p>
+
+        <div class="loc-search-wrap">
+          <input type="text" id="loc-q" class="loc-input" placeholder="Cari nama tempat atau alamat…" autocomplete="off" />
+          <button class="loc-search-btn" id="loc-search-btn">Cari</button>
+        </div>
+        <div class="loc-results" id="loc-results" style="display:none"></div>
+
+        <div class="loc-sep"><span>atau</span></div>
+
+        <button class="loc-pick-btn" id="loc-pick-btn">
+          <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 14S3 9.5 3 6a5 5 0 0110 0c0 3.5-5 8-5 8z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.5" stroke="currentColor" stroke-width="1.4"/></svg>
+          Klik langsung di peta
+        </button>
+
+        <div class="loc-selected-preview" id="loc-preview" style="display:none">
+          <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 14S3 9.5 3 6a5 5 0 0110 0c0 3.5-5 8-5 8z" stroke="#22c55e" stroke-width="1.4"/><circle cx="8" cy="6" r="1.5" stroke="#22c55e" stroke-width="1.4"/></svg>
+          <span id="loc-preview-text"></span>
+          <button class="loc-reset-btn" id="loc-reset-btn">Ubah</button>
+        </div>
+
+        <button class="btn-next" id="btn-next" disabled>Lanjut isi detail →</button>
+      </div>
+
+      <!-- Step 2: Details -->
+      <div class="modal-step" id="step-detail" style="display:none">
+        <p class="step-label">2 / 2 — Detail Kejadian</p>
+
+        <div class="form-group">
+          <label class="form-lbl" for="f-lokasi">Nama Lokasi <span class="req">*</span></label>
+          <input type="text" id="f-lokasi" class="form-inp" placeholder="cth: Cipete, Kota Tangerang" maxlength="200" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-lbl" for="f-kota">Kota / Kab.</label>
+            <input type="text" id="f-kota" class="form-inp" maxlength="100" />
+          </div>
+          <div class="form-group">
+            <label class="form-lbl" for="f-provinsi">Provinsi</label>
+            <input type="text" id="f-provinsi" class="form-inp" maxlength="100" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-lbl">Status <span class="req">*</span></label>
+          <div class="radio-group">
+            <label class="radio-opt radio-opt--benar">
+              <input type="radio" name="f-status" value="Benar" />
+              <span class="radio-box">✓</span> Benar / Dikonfirmasi
+            </label>
+            <label class="radio-opt radio-opt--hoax">
+              <input type="radio" name="f-status" value="Hoax" />
+              <span class="radio-box">✗</span> Hoax / Diragukan
+            </label>
+            <label class="radio-opt radio-opt--unverif">
+              <input type="radio" name="f-status" value="Belum Diverifikasi" checked />
+              <span class="radio-box">?</span> Belum Diverifikasi
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-lbl" for="f-tgl">Tanggal Kejadian</label>
+            <input type="date" id="f-tgl" class="form-inp" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-lbl" for="f-ket">Keterangan / Sumber</label>
+          <textarea id="f-ket" class="form-inp form-ta" rows="3" maxlength="500" placeholder="Kronologi atau sumber info (opsional)…"></textarea>
+          <span class="char-count"><span id="ket-count">0</span>/500</span>
+        </div>
+
+        <!-- Honeypot (hidden from humans) -->
+        <input type="text" name="website" id="f-hp" style="position:absolute;left:-9999px;opacity:0;pointer-events:none" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <input type="hidden" id="f-ts" />
+
+        <div class="form-actions">
+          <button class="btn-back-step" id="btn-back-step">← Ubah lokasi</button>
+          <button class="btn-submit" id="btn-submit">Kirim Laporan</button>
+        </div>
+
+        <div class="submit-msg" id="submit-msg" style="display:none"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/map/pocong_map.js"></script>
+</body>
+</html>

@@ -18,6 +18,18 @@
       url: '/tools/book-recommender',
       status: 'live',
     },
+    {
+      id: 'meme-generator',
+      name: 'Meme Generator',
+      desc: 'Pick from 100+ popular templates, add custom text, drag to reposition it, tweak font and color — then download your creation.',
+      category: 'utility',
+      tags: ['Meme', 'imgflip', 'Canvas'],
+      icon: '😹',
+      color1: '#ec4899',
+      color2: '#f43f5e',
+      url: '/tools/meme-generator',
+      status: 'live',
+    },
   ];
 
   // ─── DOM refs ─────────────────────────────────────────────────

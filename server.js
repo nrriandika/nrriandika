@@ -16,6 +16,8 @@ const cookieSession = require('cookie-session');
 const axios         = require('axios');
 const cors          = require('cors');
 const path          = require('path');
+const multer        = require('multer');
+const cloudinary    = require('cloudinary').v2;
 const crypto        = require('crypto');
 const querystring   = require('querystring');
 const fs            = require('fs');
@@ -37,6 +39,22 @@ if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
   console.warn('\n⚠  SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET not set.');
   console.warn('   Copy .env.example to .env and fill in your credentials.\n');
 }
+
+// ─── Cloudinary ─────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
+  fileFilter: (_req, file, cb) => {
+    const ok = /^image\/(jpeg|png|gif|webp)$/.test(file.mimetype);
+    cb(ok ? null : new Error('Only images are allowed'), ok);
+  },
+});
 
 // ─── Middleware ─────────────────────────────────────────────────
 app.set('trust proxy', 1);
@@ -971,6 +989,39 @@ app.get(
   }
 );
 
+// ─── Meme template upload ────────────────────────────────────────
+app.post('/api/upload-meme', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file provided' });
+
+  if (!process.env.CLOUDINARY_CLOUD_NAME) {
+    return res.status(503).json({ error: 'Cloudinary not configured' });
+  }
+
+  try {
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'nrriandika/img/upload/meme',
+          resource_type: 'image',
+          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+        },
+        (err, result) => (err ? reject(err) : resolve(result))
+      );
+      stream.end(req.file.buffer);
+    });
+
+    res.json({
+      url:       result.secure_url,
+      public_id: result.public_id,
+      width:     result.width,
+      height:    result.height,
+    });
+  } catch (err) {
+    console.error('Cloudinary upload error:', err.message);
+    res.status(502).json({ error: 'Upload failed', message: err.message });
+  }
+});
+
 // ─── SPA fallback ────────────────────────────────────────────────
 // Tools page (separate from main SPA)
 app.get(['/tools', '/tools/'], (_req, res) => {
@@ -980,6 +1031,108 @@ app.get(['/tools', '/tools/'], (_req, res) => {
 // Book Recommender sub-page
 app.get(['/tools/book-recommender', '/tools/book-recommender/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'book-recommender.html'));
+});
+
+// Meme Generator sub-page
+app.get(['/tools/meme-generator', '/tools/meme-generator/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'meme-generator.html'));
+});
+
+// ─── Pocong Map ───────────────────────────────────────────────
+app.get(['/map/pocong', '/map/pocong/', '/map/pocong_map', '/map/pocong_map.html'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'map', 'pocong_map.html'));
+});
+
+/** GET /api/pocong/incidents — all incidents, public */
+app.get('/api/pocong/incidents', async (req, res) => {
+  if (!supabase) return res.json([]);
+  const { data, error } = await supabase
+    .from('pocong_incidents')
+    .select('id,lokasi,kecamatan,kota,provinsi,lat,lon,status,tgl,ket,created_at')
+    .order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+/** GET /api/pocong/geocode?q= — proxy Nominatim */
+app.get('/api/pocong/geocode', async (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 300);
+  if (!q) return res.status(400).json({ error: 'no_query' });
+  try {
+    const { data } = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: { q, format: 'json', countrycodes: 'id', limit: 5, addressdetails: 1 },
+      headers: { 'User-Agent': 'nrriandika-pocong-map/1.0 (contact@nrriandika.com)' },
+      timeout: 6000,
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(502).json({ error: 'geocoding_failed' });
+  }
+});
+
+/** POST /api/pocong/submit — submit new incident */
+app.post('/api/pocong/submit', async (req, res) => {
+  const { honeypot, formLoadedAt, lokasi, kota, provinsi, lat, lon, status, tgl, ket } = req.body || {};
+
+  // Bot detection: honeypot field must be empty
+  if (honeypot) return res.status(400).json({ error: 'bot_detected' });
+
+  // Bot detection: form must have been open for at least 3 seconds
+  const elapsed = Date.now() - (Number(formLoadedAt) || 0);
+  if (elapsed < 3000) return res.status(400).json({ error: 'too_fast', message: 'Pengiriman terlalu cepat.' });
+
+  // Validate required fields
+  if (!lokasi?.trim() || !lat || !lon || !status) {
+    return res.status(400).json({ error: 'invalid_data', message: 'Data tidak lengkap.' });
+  }
+  const validStatuses = ['Benar', 'Hoax', 'Belum Diverifikasi'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'invalid_status' });
+  }
+  const latNum = parseFloat(lat);
+  const lonNum = parseFloat(lon);
+  if (isNaN(latNum) || isNaN(lonNum) || latNum < -11 || latNum > 6 || lonNum < 95 || lonNum > 141) {
+    return res.status(400).json({ error: 'invalid_coords', message: 'Koordinat di luar wilayah Indonesia.' });
+  }
+
+  // Rate limiting: max 3 per IP per 24 hours
+  const ip     = (req.headers['x-forwarded-for'] || req.ip || 'unknown').split(',')[0].trim();
+  const ipHash = hashIP(ip);
+
+  if (supabase) {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: logs } = await supabase
+      .from('pocong_submit_log')
+      .select('id')
+      .eq('ip_hash', ipHash)
+      .gte('created_at', since24h);
+
+    if (logs && logs.length >= 3) {
+      return res.status(429).json({
+        error: 'rate_limited',
+        message: 'Kamu sudah mengirim 3 laporan hari ini. Coba lagi besok.',
+      });
+    }
+
+    // Insert incident
+    const { error: insErr } = await supabase.from('pocong_incidents').insert({
+      lokasi:    lokasi.trim().slice(0, 200),
+      kota:      (kota || '').trim().slice(0, 100) || null,
+      provinsi:  (provinsi || '').trim().slice(0, 100) || null,
+      lat:       latNum,
+      lon:       lonNum,
+      status,
+      tgl:       tgl || null,
+      ket:       (ket || '').trim().slice(0, 500) || null,
+      ip_hash:   ipHash,
+    });
+    if (insErr) return res.status(500).json({ error: insErr.message });
+
+    // Log the submission for rate limiting
+    await supabase.from('pocong_submit_log').insert({ ip_hash: ipHash });
+  }
+
+  res.json({ ok: true, message: 'Laporan berhasil dikirim! Terima kasih.' });
 });
 
 app.get('*', (_req, res) => {
