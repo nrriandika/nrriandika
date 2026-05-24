@@ -6,6 +6,7 @@
   "rewrites": [
     { "source": "/tools/:path*", "destination": "/api/index.js" },
     { "source": "/auth/:path*", "destination": "/api/index.js" },
-    { "source": "/api/:path*", "destination": "/api/index.js" }
+    { "source": "/api/:path*",   "destination": "/api/index.js" },
+    { "source": "/(.*)",         "destination": "/api/index.js" }
   ]
 }
