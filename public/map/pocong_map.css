@@ -330,8 +330,10 @@ body { display: flex; }
   margin: 0 6px;
 }
 
-/* Hide sidebar toggle on desktop when sidebar is open */
-.sidebar:not(.collapsed) ~ .map-area #map-menu-btn { display: none; }
+/* Hide sidebar toggle on desktop only when sidebar is open */
+@media (min-width: 701px) {
+  .sidebar:not(.collapsed) ~ .map-area #map-menu-btn { display: none; }
+}
 
 /* Leaflet zoom → move to bottom-right, override default styles */
 .leaflet-bottom.leaflet-right .leaflet-control-zoom {
