@@ -1039,6 +1039,7 @@ app.get(['/tools/meme-generator', '/tools/meme-generator/'], (_req, res) => {
 });
 
 // ─── Pocong Map ───────────────────────────────────────────────
+app.get(['/map', '/map/'], (_req, res) => res.redirect(301, '/map/pocong'));
 app.get(['/map/pocong', '/map/pocong/', '/map/pocong_map', '/map/pocong_map.html'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'map', 'pocong_map.html'));
 });
