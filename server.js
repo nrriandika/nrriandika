@@ -1123,6 +1123,19 @@ app.post('/api/pocong/submit', async (req, res) => {
       });
     }
 
+    // Duplicate check: same lokasi + coords (±0.001°) + status
+    const { data: dupes } = await supabase
+      .from('pocong_incidents')
+      .select('id')
+      .ilike('lokasi', lokasi.trim())
+      .gte('lat', latNum - 0.001).lte('lat', latNum + 0.001)
+      .gte('lon', lonNum - 0.001).lte('lon', lonNum + 0.001)
+      .eq('status', status)
+      .limit(1);
+    if (dupes && dupes.length > 0) {
+      return res.status(409).json({ error: 'duplicate', message: 'Laporan serupa sudah pernah dikirim sebelumnya.' });
+    }
+
     // Check if submitter is admin
     const isAdmin  = !!(process.env.ADMIN_IP_HASH && ipHash === process.env.ADMIN_IP_HASH);
     const verified = isAdmin;
