@@ -288,23 +288,64 @@ body { display: flex; }
 }
 .footer-back:hover { color: var(--accent); }
 
-/* Map menu button (visible when sidebar collapsed) */
-.map-menu-btn {
+/* Custom map control panel (top-left, always visible) */
+.map-ctrl-panel {
   position: absolute;
   top: 14px;
   left: 14px;
   z-index: 900;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border-2);
   border-radius: var(--radius-sm);
-  padding: 9px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.map-ctrl-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
   color: var(--text-2);
   cursor: pointer;
   line-height: 0;
-  transition: all var(--trans);
-  display: none;
+  transition: background var(--trans), color var(--trans);
 }
-.map-menu-btn:hover { border-color: var(--accent); color: var(--text); }
+.map-ctrl-btn:hover { background: var(--surface-3); color: var(--text); }
+.map-ctrl-btn.active { color: var(--accent); }
+.map-ctrl-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+/* Hide sidebar toggle on desktop when sidebar is open */
+.sidebar:not(.collapsed) ~ .map-area #map-menu-btn { display: none; }
+
+/* Leaflet zoom → move to bottom-right, override default styles */
+.leaflet-bottom.leaflet-right .leaflet-control-zoom {
+  margin-bottom: 20px;
+  margin-right: 14px;
+}
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background: var(--surface) !important;
+  border-color: var(--border-2) !important;
+  color: var(--text-2) !important;
+  transition: background var(--trans), color var(--trans) !important;
+}
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: var(--surface-3) !important;
+  color: var(--text) !important;
+  border-color: var(--accent) !important;
+}
+.leaflet-bar { border: 1px solid var(--border-2) !important; box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; border-radius: var(--radius-sm) !important; overflow: hidden; }
+.leaflet-bar a { border-bottom-color: var(--border) !important; font-size: 16px !important; line-height: 30px !important; }
 
 /* Pick mode hint */
 .pick-hint {
@@ -730,6 +771,5 @@ body { display: flex; }
     box-shadow: 4px 0 30px rgba(0,0,0,0.5);
   }
   .sidebar.open { transform: translateX(0); }
-  .map-menu-btn { display: block; }
   .modal-wrap { padding: 12px; }
 }

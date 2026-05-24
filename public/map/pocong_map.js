@@ -20,6 +20,7 @@
   const filterGroup    = document.getElementById('filter-group');
   const incidentList   = document.getElementById('incident-list');
   const btnAdd         = document.getElementById('btn-add');
+  const btnZoomExtent  = document.getElementById('btn-zoom-extent');
   const statTotal      = document.getElementById('stat-total');
   const statBenar      = document.getElementById('stat-benar');
   const statHoax       = document.getElementById('stat-hoax');
@@ -61,9 +62,11 @@
     map = L.map('map', {
       center: [-2.5, 118.0],
       zoom: 5,
-      zoomControl: true,
+      zoomControl: false,       // we place it manually at bottomright
       attributionControl: true,
     });
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // CartoDB Dark Matter tiles (free, no API key)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -168,10 +171,12 @@
     try {
       const res  = await fetch('/api/pocong/incidents');
       const data = await res.json();
+      const firstLoad = incidents.length === 0;
       incidents  = Array.isArray(data) ? data : [];
       renderMarkers(incidents);
       renderIncidentList(incidents);
       updateStats(incidents);
+      if (firstLoad && incidents.length > 0) zoomToExtent();
     } catch (e) {
       incidentList.innerHTML = '<div class="incident-loading" style="color:#ef4444">Gagal memuat data.</div>';
     }
@@ -244,14 +249,29 @@
     renderIncidentList(incidents);
   });
 
+  // ── Zoom to extent ────────────────────────────────────────────
+  btnZoomExtent?.addEventListener('click', zoomToExtent);
+
+  function zoomToExtent() {
+    const visible = markers.filter(m => map.hasLayer(m.layer));
+    if (visible.length === 0) return;
+    const latlngs = visible.map(m => [m.incident.lat, m.incident.lon]);
+    map.fitBounds(L.latLngBounds(latlngs), { padding: [60, 60], maxZoom: 13 });
+
+    // Pulse the button briefly
+    btnZoomExtent?.classList.add('active');
+    setTimeout(() => btnZoomExtent?.classList.remove('active'), 600);
+  }
+
   // ── Sidebar toggle ────────────────────────────────────────────
   sidebarCollapse?.addEventListener('click', () => {
     if (window.innerWidth <= 700) {
       sidebar.classList.remove('open');
     } else {
-      sidebar.classList.toggle('collapsed');
-      mapMenuBtn.style.display = sidebar.classList.contains('collapsed') ? 'block' : 'none';
+      sidebar.classList.add('collapsed');
     }
+    // Let the map recalculate size after sidebar animates
+    setTimeout(() => map.invalidateSize(), 300);
   });
 
   mapMenuBtn?.addEventListener('click', () => {
@@ -259,8 +279,8 @@
       sidebar.classList.add('open');
     } else {
       sidebar.classList.remove('collapsed');
-      mapMenuBtn.style.display = 'none';
     }
+    setTimeout(() => map.invalidateSize(), 300);
   });
 
   // ── Modal ─────────────────────────────────────────────────────
