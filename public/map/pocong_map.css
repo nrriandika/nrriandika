@@ -79,7 +79,14 @@ body { display: flex; }
   flex-shrink: 0;
 }
 .sidebar-brand { display: flex; align-items: center; gap: 10px; }
-.brand-ghost { font-size: 28px; line-height: 1; animation: ghostFloat 3s ease-in-out infinite; }
+.brand-ghost {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+  animation: ghostFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.15));
+}
 @keyframes ghostFloat {
   0%,100% { transform: translateY(0); }
   50%      { transform: translateY(-4px); }
