@@ -75,7 +75,7 @@
     }).addTo(map);
 
     // Custom attribution
-    L.control.attribution({ position: 'bottomright', prefix: '<a href="https://leafletjs.com" target="_blank">Leaflet</a>' })
+    L.control.attribution({ position: 'bottomleft', prefix: '<a href="https://leafletjs.com" target="_blank">Leaflet</a>' })
       .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>')
       .addTo(map);
 
