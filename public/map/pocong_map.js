@@ -122,9 +122,10 @@
   }
 
   function buildPopup(inc) {
-    const cls   = statusClass(inc.status);
-    const date  = inc.tgl ? new Date(inc.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
-    const loc   = [inc.kecamatan, inc.kota, inc.provinsi].filter(Boolean).join(', ');
+    const cls      = statusClass(inc.status);
+    const date     = inc.tgl ? new Date(inc.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+    const loc      = [inc.kecamatan, inc.kota, inc.provinsi].filter(Boolean).join(', ');
+    const verified = inc.verified;
 
     return `
       <div class="pop">
@@ -133,6 +134,9 @@
         ${loc  ? `<p class="pop-meta">📍 ${esc(loc)}</p>` : ''}
         ${date ? `<p class="pop-meta">📅 ${date}</p>` : ''}
         ${inc.ket ? `<p class="pop-ket">${esc(inc.ket)}</p>` : ''}
+        ${verified
+          ? `<div class="pop-verified">✓ Dikonfirmasi admin</div>`
+          : `<div class="pop-unverified">⚠ Laporan komunitas · belum dikonfirmasi</div>`}
       </div>`;
   }
 

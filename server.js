@@ -1043,12 +1043,19 @@ app.get(['/map/pocong', '/map/pocong/', '/map/pocong_map', '/map/pocong_map.html
   res.sendFile(path.join(__dirname, 'public', 'map', 'pocong_map.html'));
 });
 
+/** GET /api/pocong/my-hash — returns caller's IP hash (so admin can set ADMIN_IP_HASH) */
+app.get('/api/pocong/my-hash', (req, res) => {
+  const ip   = (req.headers['x-forwarded-for'] || req.ip || 'unknown').split(',')[0].trim();
+  const hash = hashIP(ip);
+  res.json({ hash, ip_preview: ip.slice(0, 6) + '…' });
+});
+
 /** GET /api/pocong/incidents — all incidents, public */
 app.get('/api/pocong/incidents', async (req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase
     .from('pocong_incidents')
-    .select('id,lokasi,kecamatan,kota,provinsi,lat,lon,status,tgl,ket,created_at')
+    .select('id,lokasi,kecamatan,kota,provinsi,lat,lon,status,tgl,ket,verified,created_at')
     .order('tgl', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
@@ -1115,6 +1122,10 @@ app.post('/api/pocong/submit', async (req, res) => {
       });
     }
 
+    // Check if submitter is admin
+    const isAdmin  = !!(process.env.ADMIN_IP_HASH && ipHash === process.env.ADMIN_IP_HASH);
+    const verified = isAdmin;
+
     // Insert incident
     const { error: insErr } = await supabase.from('pocong_incidents').insert({
       lokasi:    lokasi.trim().slice(0, 200),
@@ -1126,6 +1137,7 @@ app.post('/api/pocong/submit', async (req, res) => {
       tgl:       tgl || null,
       ket:       (ket || '').trim().slice(0, 500) || null,
       ip_hash:   ipHash,
+      verified,
     });
     if (insErr) return res.status(500).json({ error: insErr.message });
 
