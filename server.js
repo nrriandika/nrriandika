@@ -1038,10 +1038,15 @@ app.get(['/tools/meme-generator', '/tools/meme-generator/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'meme-generator.html'));
 });
 
-// ─── Pocong Map ───────────────────────────────────────────────
-app.get(['/map', '/map/'], (_req, res) => res.redirect(301, '/map/pocong'));
-app.get(['/map/pocong', '/map/pocong/', '/map/pocong_map', '/map/pocong_map.html'], (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'map', 'pocong_map.html'));
+// ─── Maps ─────────────────────────────────────────────────────
+// Legacy redirects /map/* → /maps/*
+app.get(['/map', '/map/'], (_req, res) => res.redirect(301, '/maps/pocong'));
+app.get(['/map/pocong', '/map/pocong/', '/map/pocong_map', '/map/pocong_map.html'], (_req, res) => res.redirect(301, '/maps/pocong'));
+
+// Canonical routes
+app.get(['/maps', '/maps/'], (_req, res) => res.redirect(301, '/maps/pocong'));
+app.get(['/maps/pocong', '/maps/pocong/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'maps', 'pocong_map.html'));
 });
 
 /** GET /api/pocong/my-hash — returns caller's IP hash (so admin can set ADMIN_IP_HASH) */
