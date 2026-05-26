@@ -1056,7 +1056,7 @@ app.get(['/maps/kerentanan', '/maps/kerentanan/'], (_req, res) => {
 app.get('/api/kerentanan/data', async (_req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase
-    .from('indeks_kerentanan_ekonomi')
+    .from('idx_eco_2025')
     .select('id,provinsi,kemiskinan,gini,tpt,skor_masalah,kategori,narasi_kategori,driver_utama')
     .order('skor_masalah', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });

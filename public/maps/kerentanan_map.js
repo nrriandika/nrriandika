@@ -209,10 +209,16 @@
     }).addTo(map);
 
     // Fetch data + GeoJSON in parallel
-    const [rows, geojson] = await Promise.all([
+    const [rawRows, geojson] = await Promise.all([
       fetch('/api/kerentanan/data').then(r => r.json()),
       fetch('https://raw.githubusercontent.com/ans-4175/peta-indonesia-geojson/master/indonesia-prov.geojson').then(r => r.json()),
     ]);
+
+    const rows = Array.isArray(rawRows) ? rawRows : [];
+    if (!rows.length) {
+      document.getElementById('ke-loading').innerHTML = '<p style="color:#7A8BA0;font-size:13px">Gagal memuat data. Pastikan tabel Supabase sudah tersedia.</p>';
+      return;
+    }
 
     // Build lookup
     rows.forEach(r => { db[r.provinsi] = r; });
