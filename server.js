@@ -1048,6 +1048,20 @@ app.get(['/maps', '/maps/'], (_req, res) => res.redirect(301, '/maps/pocong'));
 app.get(['/maps/pocong', '/maps/pocong/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'maps', 'pocong_map.html'));
 });
+app.get(['/maps/kerentanan', '/maps/kerentanan/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'maps', 'kerentanan_map.html'));
+});
+
+/** GET /api/kerentanan/data */
+app.get('/api/kerentanan/data', async (_req, res) => {
+  if (!supabase) return res.json([]);
+  const { data, error } = await supabase
+    .from('indeks_kerentanan_ekonomi')
+    .select('id,provinsi,kemiskinan,gini,tpt,skor_masalah,kategori,narasi_kategori,driver_utama')
+    .order('skor_masalah', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
 
 /** GET /api/pocong/my-hash — returns caller's IP hash (so admin can set ADMIN_IP_HASH) */
 app.get('/api/pocong/my-hash', (req, res) => {

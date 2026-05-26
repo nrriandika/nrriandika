@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peta Kerentanan Ekonomi Indonesia 2025 · nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/maps/kerentanan_map.css" />
+</head>
+<body>
+
+  <div id="ke-app">
+
+    <!-- ─── Sidebar ─────────────────────────────────────────────── -->
+    <aside class="ke-sidebar" id="ke-sidebar">
+      <div class="ke-sidebar-scroll">
+
+        <div class="ke-header">
+          <a href="/" class="ke-back">
+            <svg viewBox="0 0 16 16" fill="none" width="12"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            nrriandika
+          </a>
+          <h1 class="ke-title">Kerentanan Ekonomi</h1>
+          <p class="ke-subtitle">Indonesia 2025 · Sumber BPS</p>
+        </div>
+
+        <!-- Layer Toggle -->
+        <div class="ke-section">
+          <div class="ke-label">Tampilkan</div>
+          <div class="ke-layers" id="ke-layers">
+            <label class="ke-layer active" data-val="composite">
+              <input type="radio" name="ke-layer" value="composite" checked />
+              <span class="ke-layer-swatch" style="background:linear-gradient(90deg,#1A7F3C,#F5A623,#C0142A)"></span>
+              <span class="ke-layer-name">Indeks Komposit</span>
+            </label>
+            <label class="ke-layer" data-val="kemiskinan">
+              <input type="radio" name="ke-layer" value="kemiskinan" />
+              <span class="ke-layer-swatch" style="background:linear-gradient(90deg,#1A7F3C,#EF4444)"></span>
+              <span class="ke-layer-name">Kemiskinan</span>
+            </label>
+            <label class="ke-layer" data-val="gini">
+              <input type="radio" name="ke-layer" value="gini" />
+              <span class="ke-layer-swatch" style="background:linear-gradient(90deg,#1A7F3C,#EF4444)"></span>
+              <span class="ke-layer-name">Gini Ratio</span>
+            </label>
+            <label class="ke-layer" data-val="tpt">
+              <input type="radio" name="ke-layer" value="tpt" />
+              <span class="ke-layer-swatch" style="background:linear-gradient(90deg,#1A7F3C,#EF4444)"></span>
+              <span class="ke-layer-name">TPT</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="ke-section">
+          <div class="ke-label">Legenda</div>
+          <div class="ke-legend-bar" id="ke-legend-bar"></div>
+          <div class="ke-legend-ticks" id="ke-legend-ticks">
+            <span id="ke-leg-min"></span>
+            <span id="ke-leg-mid"></span>
+            <span id="ke-leg-max"></span>
+          </div>
+        </div>
+
+        <!-- Distribution -->
+        <div class="ke-section">
+          <div class="ke-label">Distribusi Kategori</div>
+          <div id="ke-dist" class="ke-dist"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="ke-section">
+          <div class="ke-label">Rata-rata Nasional</div>
+          <div class="ke-stats" id="ke-stats"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="ke-footer-note">
+          <p>Komposit equal-weight (⅓ tiap indikator). Metodologi UNDP HDI.</p>
+          <p>Sumber: BPS Sep–Nov 2025.</p>
+          <p>4 DOB Papua (pemekaran 2022) tidak ditampilkan di peta karena keterbatasan GeoJSON.</p>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ─── Map Area ──────────────────────────────────────────────── -->
+    <div class="ke-map-wrap">
+      <div id="ke-map"></div>
+
+      <button class="ke-menu-btn" id="ke-menu-btn" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="ke-tooltip" id="ke-tooltip" style="display:none"></div>
+
+      <div class="ke-loading" id="ke-loading">
+        <div class="ke-loading-dots"><span></span><span></span><span></span></div>
+        <p>Memuat data peta…</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/maps/kerentanan_map.js"></script>
+</body>
+</html>
