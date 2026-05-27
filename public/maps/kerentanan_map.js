@@ -3,13 +3,9 @@
 
   // GeoJSON province name → DB province name
   const NAME_MAP = {
-    'DI. ACEH':                   'ACEH',
-    'BANGKA BELITUNG':            'KEP. BANGKA BELITUNG',
     'KEPULAUAN RIAU':             'KEP. RIAU',
     'DAERAH ISTIMEWA YOGYAKARTA': 'DI YOGYAKARTA',
-    'NUSATENGGARA BARAT':         'NUSA TENGGARA BARAT',
-    'NUSATENGGARA TIMUR':         'NUSA TENGGARA TIMUR',
-    'IRIAN JAYA BARAT':           'PAPUA BARAT',
+    'KEPULAUAN BANGKA BELITUNG':  'KEP. BANGKA BELITUNG',
   };
 
   const LAYERS = {
@@ -63,7 +59,7 @@
 
   // ─── GeoJSON style ──────────────────────────────────────────────
   function featureStyle(feature) {
-    const name = normalize(feature.properties.Propinsi || feature.properties.NAME || feature.properties.name || '');
+    const name = normalize(feature.properties.PROVINSI || '');
     const row  = db[name];
     if (!row) return { fillColor: '#1C2438', weight: 0.8, color: 'rgba(255,255,255,0.08)', fillOpacity: 0.85 };
     return {
@@ -107,7 +103,7 @@
 
   // ─── Feature events ──────────────────────────────────────────────
   function onEachFeature(feature, layer) {
-    const name = normalize(feature.properties.Propinsi || feature.properties.NAME || feature.properties.name || '');
+    const name = normalize(feature.properties.PROVINSI || '');
     const row  = db[name];
 
     layer.on({
@@ -211,7 +207,7 @@
     // Fetch data + GeoJSON in parallel
     const [rawRows, geojson] = await Promise.all([
       fetch('/api/kerentanan/data').then(r => r.json()),
-      fetch('https://raw.githubusercontent.com/ans-4175/peta-indonesia-geojson/master/indonesia-prov.geojson').then(r => r.json()),
+      fetch('/maps/indonesia-38prov.geojson').then(r => r.json()),
     ]);
 
     const rows = Array.isArray(rawRows) ? rawRows : [];
