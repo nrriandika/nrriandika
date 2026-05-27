@@ -69,6 +69,20 @@ body { display: flex; }
   transform: translateX(calc(-1 * var(--sidebar-w)));
 }
 
+/* Back link */
+.sidebar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px 4px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 11px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-back:hover { color: var(--text); }
+
 /* Header */
 .sidebar-header {
   display: flex;
