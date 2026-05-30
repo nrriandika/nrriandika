@@ -280,24 +280,50 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 
 /* ─── Popup content ──────────────────────────────────────────────── */
 .ku-pop {
-  padding: 14px 16px 13px;
-  max-width: 280px;
-  min-width: 220px;
+  padding: 14px 16px 14px;
+  max-width: 300px;
+  min-width: 240px;
 }
-.ku-pop-hd {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 10px;
+
+.ku-pop-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+.ku-pop-loc {
+  font-size: 11px;
+  color: var(--muted);
   margin-bottom: 10px;
 }
-.ku-pop-city {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.3;
+.ku-pop-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
 }
-.ku-pop-country { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ku-pop-tag-year {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.ku-pop-section { margin-bottom: 10px; }
+.ku-pop-section:last-child { margin-bottom: 0; }
+.ku-pop-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.ku-pop-section-val { font-size: 12px; color: var(--text); }
+
 .ku-pop-badge {
   font-size: 10px;
   font-weight: 600;
@@ -306,13 +332,25 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
   border: 1px solid;
   white-space: nowrap;
   flex-shrink: 0;
-  margin-top: 1px;
 }
 .ku-pop-desc {
   font-size: 11.5px;
   color: var(--muted);
   line-height: 1.6;
 }
+
+.ku-pop-sources { display: flex; flex-direction: column; gap: 5px; }
+.ku-pop-src {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #60A5FA;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.ku-pop-src:hover { color: #93C5FD; }
+.ku-pop-src--plain { color: var(--muted); }
 
 /* ─── Loading overlay ────────────────────────────────────────────── */
 .ku-loading {
@@ -345,6 +383,47 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 /* ─── Leaflet overrides ──────────────────────────────────────────── */
 .leaflet-container { background: var(--bg) !important; }
 .leaflet-attribution-flag { display: none !important; }
+
+/* ─── Cluster count badge ────────────────────────────────────────── */
+.ku-cluster-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(239,68,68,0.88);
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+}
+.ku-cluster-dot span { line-height: 1; }
+
+/* ─── Multi-visit popup rows ─────────────────────────────────────── */
+.ku-pop-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0;
+  border-top: 1px solid var(--border);
+}
+.ku-pop-row-date { font-size: 10px; color: var(--muted); flex: 1; white-space: nowrap; }
+.ku-pop-row-no   { font-size: 10px; color: var(--muted); }
+
+/* ─── Jakarta permanent label ────────────────────────────────────── */
+.ku-origin-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: rgba(255,255,255,0.65) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 0 0 0 4px !important;
+  white-space: nowrap !important;
+}
+.ku-origin-label::before { display: none !important; }
 
 /* ─── Mobile ─────────────────────────────────────────────────────── */
 @media (max-width: 700px) {

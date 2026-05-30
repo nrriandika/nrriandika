@@ -89,62 +89,128 @@
     Object.keys(markerMap).forEach(k => delete markerMap[k]);
     Object.keys(arcMap).forEach(k => delete arcMap[k]);
 
+    // ── Dashed arcs (one per visit) ───────────────────────────────
     visits.forEach(v => {
       const meta = getTypeMeta(v.jenis);
       const [lat, lon] = v.coords;
 
-      // Arc lines
       const pts  = greatCirclePts(ORIGIN[0], ORIGIN[1], lat, lon);
       const segs = splitAntimeridian(pts);
       const pls  = [];
       segs.forEach(seg => {
         if (seg.length < 2) return;
-        const pl = L.polyline(seg, { color: meta.color, weight: 1.5, opacity: 0.32 });
+        const pl = L.polyline(seg, { color: meta.color, weight: 1.8, opacity: 0.38, dashArray: '7 5' });
         pl.on('click', () => selectVisit(v.no));
-        pl.on('mouseover', function () { this.setStyle({ weight: 2.5, opacity: 0.75 }); });
+        pl.on('mouseover', function () { this.setStyle({ weight: 2.5, opacity: 0.82 }); });
         pl.on('mouseout',  function () {
-          this.setStyle({ weight: selectedNo === v.no ? 2.5 : 1.5, opacity: selectedNo === v.no ? 0.85 : 0.32 });
+          this.setStyle({ weight: selectedNo === v.no ? 2.5 : 1.8, opacity: selectedNo === v.no ? 0.85 : 0.38 });
         });
         arcGroup.addLayer(pl);
         pls.push(pl);
       });
       arcMap[v.no] = pls;
+    });
 
-      // Destination marker
-      const popup = L.popup({ maxWidth: 300, className: 'ku-popup-wrap' })
-        .setContent(buildPopup(v));
+    // ── Markers — one per unique city, badge when count > 1 ───────
+    const cityBuckets = {};
+    visits.forEach(v => {
+      const k = v.coords[0].toFixed(4) + ',' + v.coords[1].toFixed(4);
+      if (!cityBuckets[k]) cityBuckets[k] = [];
+      cityBuckets[k].push(v);
+    });
 
-      const circle = L.circleMarker([lat, lon], {
-        radius: 5,
-        fillColor: meta.color,
-        color: '#fff',
-        weight: 1.5,
-        opacity: 1,
-        fillOpacity: 0.85,
-      });
-      circle.bindPopup(popup);
-      circle.on('click', () => selectVisit(v.no));
-      circle.on('mouseover', function () { this.setStyle({ radius: 7, fillOpacity: 1 }); });
-      circle.on('mouseout',  function () { this.setStyle({ radius: selectedNo === v.no ? 7 : 5, fillOpacity: 0.85 }); });
-      markerGroup.addLayer(circle);
-      markerMap[v.no] = circle;
+    Object.values(cityBuckets).forEach(bucket => {
+      const [lat, lon] = bucket[0].coords;
+      const count = bucket.length;
+      const meta  = getTypeMeta(bucket[bucket.length - 1].jenis);
+      const c     = meta.color;
+
+      const popup = L.popup({ maxWidth: 320, className: 'ku-popup-wrap' })
+        .setContent(count > 1 ? buildMultiPopup(bucket) : buildPopup(bucket[0]));
+
+      let marker;
+      if (count > 1) {
+        const icon = L.divIcon({
+          className: '',
+          html: `<div class="ku-cluster-dot" style="border-color:${c}"><span>${count}</span></div>`,
+          iconSize:   [22, 22],
+          iconAnchor: [11, 11],
+        });
+        marker = L.marker([lat, lon], { icon, zIndexOffset: 100 });
+      } else {
+        marker = L.circleMarker([lat, lon], {
+          radius: 5, fillColor: c, color: '#fff', weight: 1.5, opacity: 1, fillOpacity: 0.85,
+        });
+        marker.on('mouseover', function () { this.setStyle({ radius: 7, fillOpacity: 1 }); });
+        marker.on('mouseout',  function () {
+          const sel = bucket.some(v => v.no === selectedNo);
+          this.setStyle({ radius: sel ? 7 : 5, fillOpacity: 0.85 });
+        });
+      }
+
+      marker.bindPopup(popup);
+      marker.on('click', () => selectVisit(bucket[0].no));
+      markerGroup.addLayer(marker);
+      bucket.forEach(v => { markerMap[v.no] = marker; });
     });
   }
 
-  // ─── Build popup HTML ─────────────────────────────────────────────
+  // ─── Build multi-visit popup HTML ────────────────────────────────
+  function buildMultiPopup(bucket) {
+    const { flag, kota, negara, kawasan } = bucket[0];
+    const rows = bucket.map(v => {
+      const meta = getTypeMeta(v.jenis);
+      const c = meta.color;
+      return `
+        <div class="ku-pop-row">
+          <span class="ku-pop-badge" style="background:${c}1a;color:${c};border-color:${c}50">${meta.short}</span>
+          <span class="ku-pop-row-date">${fmtDate(v.mulai, v.selesai)}</span>
+          <span class="ku-pop-row-no">#${v.no}</span>
+        </div>`;
+    }).join('');
+    return `
+      <div class="ku-pop">
+        <div class="ku-pop-title">${flag} ${negara}</div>
+        <div class="ku-pop-loc">📍 ${kota} · ${kawasan}</div>
+        <div class="ku-pop-tags">
+          <span class="ku-pop-tag-year">${bucket.length} kunjungan</span>
+        </div>
+        ${rows}
+      </div>`;
+  }
+
+  // ─── Build single-visit popup HTML ───────────────────────────────
   function buildPopup(v) {
     const meta = getTypeMeta(v.jenis);
     const c = meta.color;
+    const sources = parseSumber(v.sumber_media, v.sumber_url);
+    const srcHtml = sources.length ? `
+      <div class="ku-pop-section">
+        <div class="ku-pop-section-label">Sumber Berita</div>
+        <div class="ku-pop-sources">
+          ${sources.map(s => s.url
+            ? `<a href="${s.url}" target="_blank" rel="noopener" class="ku-pop-src">${s.name}<svg viewBox="0 0 10 10" width="9" fill="none" style="flex-shrink:0"><path d="M2 8L8 2M4 2h4v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`
+            : `<span class="ku-pop-src ku-pop-src--plain">${s.name}</span>`
+          ).join('')}
+        </div>
+      </div>` : '';
     return `
       <div class="ku-pop">
-        <div class="ku-pop-hd">
-          <div>
-            <div class="ku-pop-city">${v.flag} ${v.kota}</div>
-            <div class="ku-pop-country">${v.negara} · ${fmtDate(v.mulai, v.selesai)}</div>
-          </div>
+        <div class="ku-pop-title">${v.flag} ${v.negara}</div>
+        <div class="ku-pop-loc">📍 ${v.kota} · ${v.kawasan}</div>
+        <div class="ku-pop-tags">
           <span class="ku-pop-badge" style="background:${c}1a;color:${c};border-color:${c}50">${v.jenis}</span>
+          <span class="ku-pop-tag-year">${v.tahun}</span>
         </div>
-        <p class="ku-pop-desc">${v.rincian}</p>
+        <div class="ku-pop-section">
+          <div class="ku-pop-section-label">Tanggal</div>
+          <div class="ku-pop-section-val">${fmtDate(v.mulai, v.selesai)}</div>
+        </div>
+        <div class="ku-pop-section">
+          <div class="ku-pop-section-label">Rincian</div>
+          <div class="ku-pop-desc">${v.rincian}</div>
+        </div>
+        ${srcHtml}
       </div>`;
   }
 
@@ -234,24 +300,33 @@
   // ─── Normalize API row → internal shape ──────────────────────────
   function normalizeRow(r) {
     return {
-      no:      r.no,
-      tahun:   r.tahun,
-      negara:  r.negara,
-      flag:    r.flag || '',
-      kawasan: r.kawasan || '',
-      kota:    r.kota || '',
-      coords:  [parseFloat(r.lat), parseFloat(r.lon)],
-      mulai:   r.tanggal_mulai,
-      selesai: r.tanggal_selesai,
-      jenis:   r.jenis_kunjungan,
-      rincian: r.rincian || '',
+      no:           r.no,
+      tahun:        r.tahun,
+      negara:       r.negara,
+      flag:         r.flag || '',
+      kawasan:      r.kawasan || '',
+      kota:         r.kota || '',
+      coords:       [parseFloat(r.lat), parseFloat(r.lon)],
+      mulai:        r.tanggal_mulai,
+      selesai:      r.tanggal_selesai,
+      jenis:        r.jenis_kunjungan,
+      rincian:      r.rincian || '',
+      sumber_media: r.sumber_media || '',
+      sumber_url:   r.sumber_url   || '',
     };
+  }
+
+  // ─── Parse semicolon-separated sumber into {name, url}[] ─────────
+  function parseSumber(media, url) {
+    const names = (media || '').split(';').map(s => s.trim()).filter(Boolean);
+    const urls  = (url   || '').split(';').map(s => s.trim()).filter(Boolean);
+    return names.map((name, i) => ({ name, url: urls[i] || null }));
   }
 
   // ─── Init ─────────────────────────────────────────────────────────
   async function init() {
     map = L.map('ku-map', {
-      center:           [20, 30],
+      center:           [10, 100],
       zoom:             2,
       minZoom:          2,
       zoomControl:      false,
@@ -280,7 +355,7 @@
       iconAnchor: [12, 12],
     });
     L.marker(ORIGIN, { icon: originIcon, zIndexOffset: 1000 })
-      .bindTooltip('Jakarta · Titik Berangkat', { permanent: false, direction: 'right' })
+      .bindTooltip('Jakarta', { permanent: true, direction: 'right', className: 'ku-origin-label' })
       .addTo(map);
 
     // Filter buttons

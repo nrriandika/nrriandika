@@ -1058,7 +1058,7 @@ app.get('/api/kunjungan/data', async (_req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase
     .from('kunjungan_prabowo')
-    .select('no,tahun,negara,flag,kawasan,kota,lat,lon,tanggal_mulai,tanggal_selesai,jenis_kunjungan,rincian')
+    .select('no,tahun,negara,flag,kawasan,kota,lat,lon,tanggal_mulai,tanggal_selesai,jenis_kunjungan,rincian,sumber_media,sumber_url')
     .order('tanggal_mulai', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
