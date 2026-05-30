@@ -188,7 +188,7 @@
           <span class="ku-pop-nav-label">${i + 1} / ${total}</span>
           <button class="ku-pop-nav-btn" onclick="event.stopPropagation();kuPopupNav('${key}',${next})">&#8250;</button>
         </div>
-        <div class="ku-pop-title">${v.flag} ${v.negara}</div>
+        <div class="ku-pop-title">${flagImg(v.flag, 22, 16)} ${v.negara}</div>
         <div class="ku-pop-loc">📍 ${v.kota} · ${v.kawasan}</div>
         <div class="ku-pop-tags">
           <span class="ku-pop-badge" style="background:${c}1a;color:${c};border-color:${c}50">${v.jenis}</span>
@@ -233,7 +233,7 @@
       </div>` : '';
     return `
       <div class="ku-pop">
-        <div class="ku-pop-title">${v.flag} ${v.negara}</div>
+        <div class="ku-pop-title">${flagImg(v.flag, 22, 16)} ${v.negara}</div>
         <div class="ku-pop-loc">📍 ${v.kota} · ${v.kawasan}</div>
         <div class="ku-pop-tags">
           <span class="ku-pop-badge" style="background:${c}1a;color:${c};border-color:${c}50">${v.jenis}</span>
@@ -310,7 +310,7 @@
       const c = meta.color;
       return `
         <div class="ku-item" data-no="${v.no}">
-          <div class="ku-item-flag">${v.flag}</div>
+          <div class="ku-item-flag">${flagImg(v.flag, 20, 15)}</div>
           <div class="ku-item-body">
             <div class="ku-item-name">${v.negara} <span class="ku-item-city">· ${v.kota}</span></div>
             <div class="ku-item-meta">
@@ -351,6 +351,17 @@
       sumber_media: r.sumber_media || '',
       sumber_url:   r.sumber_url   || '',
     };
+  }
+
+  // ─── Flag emoji → <img> from flagcdn.com ─────────────────────────
+  function flagImg(emoji, w, h) {
+    if (!emoji) return '';
+    const pts = [...emoji].map(c => c.codePointAt(0));
+    if (pts.length >= 2 && pts[0] >= 0x1F1E6 && pts[0] <= 0x1F1FF) {
+      const code = (String.fromCharCode(pts[0] - 0x1F1E6 + 65) + String.fromCharCode(pts[1] - 0x1F1E6 + 65)).toLowerCase();
+      return `<img src="https://flagcdn.com/w40/${code}.png" width="${w || 20}" height="${h || 15}" style="border-radius:2px;flex-shrink:0;vertical-align:middle" alt="${code.toUpperCase()}">`;
+    }
+    return emoji;
   }
 
   // ─── Parse semicolon-separated sumber into {name, url}[] ─────────
