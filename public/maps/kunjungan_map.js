@@ -36,49 +36,40 @@
     return `${d1.getDate()} ${m1} ${y1}–${d2.getDate()} ${m2} ${y2}`;
   }
 
-  // ─── Great circle arc ─────────────────────────────────────────────
-  function greatCirclePts(lat1, lon1, lat2, lon2, n) {
-    n = n || 64;
-    const toR = d => d * Math.PI / 180;
-    const toD = r => r * 180 / Math.PI;
-    const φ1 = toR(lat1), λ1 = toR(lon1);
-    const φ2 = toR(lat2), λ2 = toR(lon2);
-    const d = 2 * Math.asin(Math.sqrt(
-      Math.sin((φ2-φ1)/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin((λ2-λ1)/2)**2
-    ));
-    if (d < 0.0001) return [[lat1,lon1],[lat2,lon2]];
+  // ─── Quadratic bezier arc (always curves upward) ─────────────────
+  function bezierArcPts(lat1, lng1, lat2, lng2, n, liftOffset) {
+    n = n || 80;
+    // Normalize longitude: shortest path, handles antimeridian
+    let dLng = lng2 - lng1;
+    if (dLng > 180) dLng -= 360;
+    if (dLng < -180) dLng += 360;
+    const lng2n = lng1 + dLng;
+
+    // Control point: midpoint lifted UPWARD
+    const midLat = (lat1 + lat2) / 2;
+    const midLng = (lng1 + lng2n) / 2;
+    const dist   = Math.sqrt(dLng * dLng + (lat2 - lat1) * (lat2 - lat1));
+    const lift   = Math.min(10 + dist * 0.22, 55) + (liftOffset || 0);
+
+    const ctrlLat = midLat + lift;
+    const ctrlLng = midLng;
+
     const pts = [];
     for (let i = 0; i <= n; i++) {
-      const f = i / n;
-      const A = Math.sin((1-f)*d) / Math.sin(d);
-      const B = Math.sin(f*d) / Math.sin(d);
-      const x = A*Math.cos(φ1)*Math.cos(λ1) + B*Math.cos(φ2)*Math.cos(λ2);
-      const y = A*Math.cos(φ1)*Math.sin(λ1) + B*Math.cos(φ2)*Math.sin(λ2);
-      const z = A*Math.sin(φ1) + B*Math.sin(φ2);
-      pts.push([toD(Math.atan2(z, Math.sqrt(x*x+y*y))), toD(Math.atan2(y, x))]);
+      const t = i / n, mt = 1 - t;
+      pts.push([
+        mt * mt * lat1 + 2 * mt * t * ctrlLat + t * t * lat2,
+        mt * mt * lng1 + 2 * mt * t * ctrlLng + t * t * lng2n,
+      ]);
     }
     return pts;
   }
 
-  function splitAntimeridian(pts) {
-    const segs = [];
-    let cur = [pts[0]];
-    for (let i = 1; i < pts.length; i++) {
-      if (Math.abs(pts[i][1] - pts[i-1][1]) > 180) {
-        segs.push(cur);
-        cur = [pts[i]];
-      } else {
-        cur.push(pts[i]);
-      }
-    }
-    segs.push(cur);
-    return segs;
-  }
-
   // ─── Map state ────────────────────────────────────────────────────
   let map, arcGroup, markerGroup;
-  const markerMap = {};  // no → CircleMarker
-  const arcMap    = {};  // no → [polyline, ...]
+  const markerMap    = {};  // no → marker
+  const arcMap       = {};  // no → [polyline]
+  const popupBuckets = {};  // coordKey → sorted bucket for nav
   let activeYear = 'all';
   let selectedNo = null;
 
@@ -89,26 +80,20 @@
     Object.keys(markerMap).forEach(k => delete markerMap[k]);
     Object.keys(arcMap).forEach(k => delete arcMap[k]);
 
-    // ── Dashed arcs (one per visit) ───────────────────────────────
-    visits.forEach(v => {
+    // ── Dashed bezier arcs (one per visit, staggered lift) ────────
+    visits.forEach((v, idx) => {
       const meta = getTypeMeta(v.jenis);
       const [lat, lon] = v.coords;
-
-      const pts  = greatCirclePts(ORIGIN[0], ORIGIN[1], lat, lon);
-      const segs = splitAntimeridian(pts);
-      const pls  = [];
-      segs.forEach(seg => {
-        if (seg.length < 2) return;
-        const pl = L.polyline(seg, { color: meta.color, weight: 1.8, opacity: 0.38, dashArray: '7 5' });
-        pl.on('click', () => selectVisit(v.no));
-        pl.on('mouseover', function () { this.setStyle({ weight: 2.5, opacity: 0.82 }); });
-        pl.on('mouseout',  function () {
-          this.setStyle({ weight: selectedNo === v.no ? 2.5 : 1.8, opacity: selectedNo === v.no ? 0.85 : 0.38 });
-        });
-        arcGroup.addLayer(pl);
-        pls.push(pl);
+      const liftOffset = (idx % 8) * 1.5;
+      const pts = bezierArcPts(ORIGIN[0], ORIGIN[1], lat, lon, 80, liftOffset);
+      const pl  = L.polyline(pts, { color: meta.color, weight: 1.8, opacity: 0.38, dashArray: '7 5' });
+      pl.on('click', () => selectVisit(v.no));
+      pl.on('mouseover', function () { this.setStyle({ weight: 2.5, opacity: 0.82 }); });
+      pl.on('mouseout',  function () {
+        this.setStyle({ weight: selectedNo === v.no ? 2.5 : 1.8, opacity: selectedNo === v.no ? 0.85 : 0.38 });
       });
-      arcMap[v.no] = pls;
+      arcGroup.addLayer(pl);
+      arcMap[v.no] = [pl];
     });
 
     // ── Markers — one per unique city, badge when count > 1 ───────
@@ -155,29 +140,66 @@
     });
   }
 
-  // ─── Build multi-visit popup HTML ────────────────────────────────
-  function buildMultiPopup(bucket) {
-    const { flag, kota, negara, kawasan } = bucket[0];
-    const rows = bucket.map(v => {
-      const meta = getTypeMeta(v.jenis);
-      const c = meta.color;
-      return `
-        <div class="ku-pop-row">
-          <span class="ku-pop-badge" style="background:${c}1a;color:${c};border-color:${c}50">${meta.short}</span>
-          <span class="ku-pop-row-date">${fmtDate(v.mulai, v.selesai)}</span>
-          <span class="ku-pop-row-no">#${v.no}</span>
-        </div>`;
-    }).join('');
+  // ─── Build multi-visit popup (navigable, most recent first) ──────
+  function buildMultiPopup(bucket, idx) {
+    const sorted = [...bucket].sort((a, b) => new Date(b.mulai) - new Date(a.mulai));
+    const key    = sorted[0].coords[0].toFixed(4) + ',' + sorted[0].coords[1].toFixed(4);
+    popupBuckets[key] = sorted;
+
+    const i     = idx !== undefined ? idx : 0;
+    const v     = sorted[i];
+    const total = sorted.length;
+    const meta  = getTypeMeta(v.jenis);
+    const c     = meta.color;
+    const prev  = (i - 1 + total) % total;
+    const next  = (i + 1) % total;
+    const sources = parseSumber(v.sumber_media, v.sumber_url);
+
+    const srcHtml = sources.length ? `
+      <div class="ku-pop-section">
+        <div class="ku-pop-section-label">Sumber Berita</div>
+        <div class="ku-pop-sources">
+          ${sources.map(s => s.url
+            ? `<a href="${s.url}" target="_blank" rel="noopener" class="ku-pop-src">${s.name}<svg viewBox="0 0 10 10" width="9" fill="none" style="flex-shrink:0"><path d="M2 8L8 2M4 2h4v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`
+            : `<span class="ku-pop-src ku-pop-src--plain">${s.name}</span>`
+          ).join('')}
+        </div>
+      </div>` : '';
+
     return `
       <div class="ku-pop">
-        <div class="ku-pop-title">${flag} ${negara}</div>
-        <div class="ku-pop-loc">📍 ${kota} · ${kawasan}</div>
-        <div class="ku-pop-tags">
-          <span class="ku-pop-tag-year">${bucket.length} kunjungan</span>
+        <div class="ku-pop-nav">
+          <button class="ku-pop-nav-btn" onclick="kuPopupNav('${key}',${prev})">&#8249;</button>
+          <span class="ku-pop-nav-label">${i + 1} / ${total}</span>
+          <button class="ku-pop-nav-btn" onclick="kuPopupNav('${key}',${next})">&#8250;</button>
         </div>
-        ${rows}
+        <div class="ku-pop-title">${v.flag} ${v.negara}</div>
+        <div class="ku-pop-loc">📍 ${v.kota} · ${v.kawasan}</div>
+        <div class="ku-pop-tags">
+          <span class="ku-pop-badge" style="background:${c}1a;color:${c};border-color:${c}50">${v.jenis}</span>
+          <span class="ku-pop-tag-year">${v.tahun}</span>
+        </div>
+        <div class="ku-pop-section">
+          <div class="ku-pop-section-label">Tanggal</div>
+          <div class="ku-pop-section-val">${fmtDate(v.mulai, v.selesai)}</div>
+        </div>
+        <div class="ku-pop-section">
+          <div class="ku-pop-section-label">Rincian</div>
+          <div class="ku-pop-desc">${v.rincian}</div>
+        </div>
+        ${srcHtml}
       </div>`;
   }
+
+  // ─── Popup navigation (called from onclick in popup HTML) ─────────
+  window.kuPopupNav = function (key, idx) {
+    const bucket = popupBuckets[key];
+    if (!bucket) return;
+    const marker = markerMap[bucket[0].no];
+    if (!marker) return;
+    marker.setPopupContent(buildMultiPopup(bucket, idx));
+    if (marker.getPopup().isOpen()) marker.getPopup().update();
+  };
 
   // ─── Build single-visit popup HTML ───────────────────────────────
   function buildPopup(v) {

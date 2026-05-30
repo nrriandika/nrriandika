@@ -401,16 +401,31 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 }
 .ku-cluster-dot span { line-height: 1; }
 
-/* ─── Multi-visit popup rows ─────────────────────────────────────── */
-.ku-pop-row {
+/* ─── Multi-visit popup nav ──────────────────────────────────────── */
+.ku-pop-nav {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 0;
-  border-top: 1px solid var(--border);
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
 }
-.ku-pop-row-date { font-size: 10px; color: var(--muted); flex: 1; white-space: nowrap; }
-.ku-pop-row-no   { font-size: 10px; color: var(--muted); }
+.ku-pop-nav-btn {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.ku-pop-nav-btn:hover { background: rgba(255,255,255,0.12); }
+.ku-pop-nav-label { font-size: 10px; color: var(--muted); font-weight: 600; }
 
 /* ─── Jakarta permanent label ────────────────────────────────────── */
 .ku-origin-label {
