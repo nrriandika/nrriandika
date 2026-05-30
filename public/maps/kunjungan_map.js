@@ -36,35 +36,23 @@
     return `${d1.getDate()} ${m1} ${y1}–${d2.getDate()} ${m2} ${y2}`;
   }
 
-  // ─── Quadratic bezier arc (always curves upward) ─────────────────
+  // ─── Sinusoidal arc — always upward, western path for Americas ───
   function bezierArcPts(lat1, lng1, lat2, lng2, n, liftOffset) {
     n = n || 80;
-    // Normalize longitude: take shortest-path direction
     let dLng = lng2 - lng1;
     if (dLng > 180) dLng -= 360;
-    if (dLng < -180) dLng += 360;
-    const lng2n = lng1 + dLng;
+    // intentionally NOT normalizing dLng < -180: forces western path for Americas
+    // so intermediate longitudes never exceed 180° and markers stay in place
 
-    // Control point: midpoint lifted UPWARD (lat), not sideways
-    const midLat = (lat1 + lat2) / 2;
-    const midLng = (lng1 + lng2n) / 2;
-    const dist    = Math.sqrt(dLng * dLng + (lat2 - lat1) * (lat2 - lat1));
-    const lift    = Math.min(10 + dist * 0.22, 55) + (liftOffset || 0);
-    const ctrlLat = midLat + lift;
-    const ctrlLng = midLng;
+    const dist = Math.sqrt(dLng * dLng + (lat2 - lat1) * (lat2 - lat1));
+    const lift = Math.min(10 + dist * 0.20, 50) + (liftOffset || 0);
 
     const pts = [];
     for (let i = 0; i <= n; i++) {
-      const t = i / n, mt = 1 - t;
-      // Compute raw longitude along bezier (may exceed ±180)
-      let lng = mt * mt * lng1 + 2 * mt * t * ctrlLng + t * t * lng2n;
-      // Normalize to [-180, 180] so splitAntimeridian works correctly
-      // Marker always uses original coords — this only affects arc drawing
-      while (lng > 180) lng -= 360;
-      while (lng < -180) lng += 360;
+      const t = i / n;
       pts.push([
-        mt * mt * lat1 + 2 * mt * t * ctrlLat + t * t * lat2,
-        lng,
+        lat1 + (lat2 - lat1) * t + Math.sin(Math.PI * t) * lift,
+        lng1 + dLng * t,
       ]);
     }
     return pts;
@@ -196,9 +184,9 @@
     return `
       <div class="ku-pop">
         <div class="ku-pop-nav">
-          <button class="ku-pop-nav-btn" onclick="kuPopupNav('${key}',${prev})">&#8249;</button>
+          <button class="ku-pop-nav-btn" onclick="event.stopPropagation();kuPopupNav('${key}',${prev})">&#8249;</button>
           <span class="ku-pop-nav-label">${i + 1} / ${total}</span>
-          <button class="ku-pop-nav-btn" onclick="kuPopupNav('${key}',${next})">&#8250;</button>
+          <button class="ku-pop-nav-btn" onclick="event.stopPropagation();kuPopupNav('${key}',${next})">&#8250;</button>
         </div>
         <div class="ku-pop-title">${v.flag} ${v.negara}</div>
         <div class="ku-pop-loc">📍 ${v.kota} · ${v.kawasan}</div>
@@ -224,8 +212,8 @@
     if (!bucket) return;
     const marker = markerMap[bucket[0].no];
     if (!marker) return;
-    marker.setPopupContent(buildMultiPopup(bucket, idx));
-    if (marker.getPopup().isOpen()) marker.getPopup().update();
+    const popup = marker.getPopup();
+    if (popup) popup.setContent(buildMultiPopup(bucket, idx));
   };
 
   // ─── Build single-visit popup HTML ───────────────────────────────
