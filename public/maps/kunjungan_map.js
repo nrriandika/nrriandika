@@ -39,30 +39,51 @@
   // ─── Quadratic bezier arc (always curves upward) ─────────────────
   function bezierArcPts(lat1, lng1, lat2, lng2, n, liftOffset) {
     n = n || 80;
-    // Normalize longitude: shortest path, handles antimeridian
+    // Normalize longitude: take shortest-path direction
     let dLng = lng2 - lng1;
     if (dLng > 180) dLng -= 360;
     if (dLng < -180) dLng += 360;
     const lng2n = lng1 + dLng;
 
-    // Control point: midpoint lifted UPWARD
+    // Control point: midpoint lifted UPWARD (lat), not sideways
     const midLat = (lat1 + lat2) / 2;
     const midLng = (lng1 + lng2n) / 2;
-    const dist   = Math.sqrt(dLng * dLng + (lat2 - lat1) * (lat2 - lat1));
-    const lift   = Math.min(10 + dist * 0.22, 55) + (liftOffset || 0);
-
+    const dist    = Math.sqrt(dLng * dLng + (lat2 - lat1) * (lat2 - lat1));
+    const lift    = Math.min(10 + dist * 0.22, 55) + (liftOffset || 0);
     const ctrlLat = midLat + lift;
     const ctrlLng = midLng;
 
     const pts = [];
     for (let i = 0; i <= n; i++) {
       const t = i / n, mt = 1 - t;
+      // Compute raw longitude along bezier (may exceed ±180)
+      let lng = mt * mt * lng1 + 2 * mt * t * ctrlLng + t * t * lng2n;
+      // Normalize to [-180, 180] so splitAntimeridian works correctly
+      // Marker always uses original coords — this only affects arc drawing
+      while (lng > 180) lng -= 360;
+      while (lng < -180) lng += 360;
       pts.push([
         mt * mt * lat1 + 2 * mt * t * ctrlLat + t * t * lat2,
-        mt * mt * lng1 + 2 * mt * t * ctrlLng + t * t * lng2n,
+        lng,
       ]);
     }
     return pts;
+  }
+
+  // ─── Split arc where it crosses the antimeridian ──────────────────
+  function splitAntimeridian(pts) {
+    const segs = [];
+    let cur = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      if (Math.abs(pts[i][1] - pts[i-1][1]) > 180) {
+        segs.push(cur);
+        cur = [pts[i]];
+      } else {
+        cur.push(pts[i]);
+      }
+    }
+    segs.push(cur);
+    return segs;
   }
 
   // ─── Map state ────────────────────────────────────────────────────
@@ -83,17 +104,23 @@
     // ── Dashed bezier arcs (one per visit, staggered lift) ────────
     visits.forEach((v, idx) => {
       const meta = getTypeMeta(v.jenis);
-      const [lat, lon] = v.coords;
+      const [lat, lon] = v.coords;       // always use original DB coords
       const liftOffset = (idx % 8) * 1.5;
-      const pts = bezierArcPts(ORIGIN[0], ORIGIN[1], lat, lon, 80, liftOffset);
-      const pl  = L.polyline(pts, { color: meta.color, weight: 1.8, opacity: 0.38, dashArray: '7 5' });
-      pl.on('click', () => selectVisit(v.no));
-      pl.on('mouseover', function () { this.setStyle({ weight: 2.5, opacity: 0.82 }); });
-      pl.on('mouseout',  function () {
-        this.setStyle({ weight: selectedNo === v.no ? 2.5 : 1.8, opacity: selectedNo === v.no ? 0.85 : 0.38 });
+      const pts  = bezierArcPts(ORIGIN[0], ORIGIN[1], lat, lon, 80, liftOffset);
+      const segs = splitAntimeridian(pts);
+      const pls  = [];
+      segs.forEach(seg => {
+        if (seg.length < 2) return;
+        const pl = L.polyline(seg, { color: meta.color, weight: 1.8, opacity: 0.38, dashArray: '7 5' });
+        pl.on('click', () => selectVisit(v.no));
+        pl.on('mouseover', function () { this.setStyle({ weight: 2.5, opacity: 0.82 }); });
+        pl.on('mouseout',  function () {
+          this.setStyle({ weight: selectedNo === v.no ? 2.5 : 1.8, opacity: selectedNo === v.no ? 0.85 : 0.38 });
+        });
+        arcGroup.addLayer(pl);
+        pls.push(pl);
       });
-      arcGroup.addLayer(pl);
-      arcMap[v.no] = [pl];
+      arcMap[v.no] = pls;
     });
 
     // ── Markers — one per unique city, badge when count > 1 ───────
