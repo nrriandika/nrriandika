@@ -305,7 +305,7 @@
       el.innerHTML = '<p class="ku-empty">Tidak ada kunjungan pada tahun ini.</p>';
       return;
     }
-    el.innerHTML = visits.map(v => {
+    el.innerHTML = [...visits].sort((a, b) => new Date(b.mulai) - new Date(a.mulai)).map(v => {
       const meta = getTypeMeta(v.jenis);
       const c = meta.color;
       return `
