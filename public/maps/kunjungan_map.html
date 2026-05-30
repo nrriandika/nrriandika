@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peta Kunjungan Kenegaraan Prabowo · nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/maps/kunjungan_map.css" />
+</head>
+<body>
+
+  <div id="ku-app">
+
+    <!-- ─── Sidebar ──────────────────────────────────────────────── -->
+    <aside class="ku-sidebar" id="ku-sidebar">
+
+      <!-- Fixed top: header + stats + filter + legend -->
+      <div class="ku-top">
+
+        <div class="ku-header">
+          <a href="/" class="ku-back">
+            <svg viewBox="0 0 16 16" fill="none" width="12"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            nrriandika
+          </a>
+          <h1 class="ku-title">Kunjungan Kenegaraan</h1>
+          <p class="ku-subtitle">Prabowo Subianto · 2024–2026</p>
+        </div>
+
+        <div class="ku-section">
+          <div class="ku-label">Statistik</div>
+          <div class="ku-stats" id="ku-stats"></div>
+        </div>
+
+        <div class="ku-section">
+          <div class="ku-label">Filter Tahun</div>
+          <div class="ku-filters" id="ku-filters">
+            <button class="ku-flt active" data-year="all">Semua</button>
+            <button class="ku-flt" data-year="2024">2024</button>
+            <button class="ku-flt" data-year="2025">2025</button>
+            <button class="ku-flt" data-year="2026">2026</button>
+          </div>
+        </div>
+
+        <div class="ku-section">
+          <div class="ku-label">Jenis Kunjungan</div>
+          <div class="ku-legend" id="ku-legend"></div>
+        </div>
+
+        <div class="ku-list-label ku-label">Agenda Perjalanan</div>
+
+      </div>
+
+      <!-- Scrollable visit list -->
+      <div class="ku-mid">
+        <div class="ku-list" id="ku-list"></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="ku-bot">
+        <p>Sumber: Wikipedia. 53 kunjungan tercatat per Mei 2026.</p>
+        <a href="/" class="ku-bot-back">← nrriandika.com</a>
+      </div>
+
+    </aside>
+
+    <!-- ─── Map Area ──────────────────────────────────────────────── -->
+    <div class="ku-map-wrap">
+      <div id="ku-map"></div>
+
+      <button class="ku-menu-btn" id="ku-menu-btn" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="ku-loading" id="ku-loading">
+        <div class="ku-loading-dots"><span></span><span></span><span></span></div>
+        <p>Memuat data kunjungan…</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/maps/kunjungan_map.js"></script>
+</body>
+</html>

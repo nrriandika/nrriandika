@@ -1051,6 +1051,18 @@ app.get(['/maps/pocong', '/maps/pocong/'], (_req, res) => {
 app.get(['/maps/kerentanan', '/maps/kerentanan/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'maps', 'kerentanan_map.html'));
 });
+app.get(['/maps/prab_visit', '/maps/prab_visit/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'maps', 'kunjungan_map.html'));
+});
+app.get('/api/kunjungan/data', async (_req, res) => {
+  if (!supabase) return res.json([]);
+  const { data, error } = await supabase
+    .from('kunjungan_prabowo')
+    .select('no,tahun,negara,flag,kawasan,kota,lat,lon,tanggal_mulai,tanggal_selesai,jenis_kunjungan,rincian')
+    .order('tanggal_mulai', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
 
 /** GET /api/kerentanan/data */
 app.get('/api/kerentanan/data', async (_req, res) => {
