@@ -405,7 +405,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 .ku-pop-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   margin-bottom: 10px;
 }
