@@ -140,6 +140,34 @@ body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 #legend{position:fixed;top:24px;right:24px;z-index:10;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 #legend span{font-size:11px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:6px}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+#disclaimer-btn{
+  margin-top:4px;background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:8px;padding:5px 10px;
+  font-size:11px;color:rgba(255,255,255,0.55);
+  cursor:pointer;font-family:inherit;
+  transition:background 0.2s,color 0.2s;
+}
+#disclaimer-btn:hover{background:rgba(255,255,255,0.13);color:#fff}
+
+/* Disclaimer modal */
+#disclaimer-overlay{
+  position:fixed;inset:0;z-index:350;display:none;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);
+}
+#disclaimer-overlay.show{display:flex;}
+#disclaimer-card{
+  background:rgba(8,8,22,0.97);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px;padding:28px 32px;
+  text-align:center;max-width:380px;width:92%;
+  backdrop-filter:blur(24px);
+}
+.disclaimer-icon{font-size:40px;margin-bottom:8px}
+#disclaimer-card h2{font-size:18px;font-weight:600;margin-bottom:14px}
+#disclaimer-card p{font-size:13px;color:rgba(255,255,255,0.6);line-height:1.65;margin-bottom:12px;text-align:left}
+#disclaimer-card .result-btn{margin-top:6px}
 
 #loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0f;z-index:999;gap:12px}
 #loading p{font-size:14px;color:rgba(255,255,255,0.5)}
@@ -225,6 +253,18 @@ body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 
   <span><span class="dot" style="background:#4fc3f7"></span>Grup A–F</span>
   <span><span class="dot" style="background:#81c784"></span>Grup G–L</span>
+  <button id="disclaimer-btn" onclick="openDisclaimer()">⚠️ Disclaimer</button>
+</div>
+
+<div id="disclaimer-overlay" onclick="if(event.target===this)closeDisclaimer()">
+  <div id="disclaimer-card">
+    <div class="disclaimer-icon">⚠️</div>
+    <h2>Disclaimer</h2>
+    <p>Tools ini <strong>hanyalah mainan</strong> alias hiburan semata — <strong>bukan</strong> alat prediksi sungguhan.</p>
+    <p>Tidak ada AI, neural network, atau quantum computer beneran di balik layar. Hasilnya selalu England, hanya untuk seru-seruan. 😄</p>
+    <p>Jangan dijadikan dasar taruhan atau keputusan apa pun. Nikmati saja sebagai candaan!</p>
+    <button class="result-btn" onclick="closeDisclaimer()">Oke, paham 👍</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
@@ -396,6 +436,10 @@ function getRoast(userTeam) {
 }
 
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// Disclaimer modal
+function openDisclaimer(){ document.getElementById('disclaimer-overlay').classList.add('show'); }
+function closeDisclaimer(){ document.getElementById('disclaimer-overlay').classList.remove('show'); }
 
 // Wikipedia photo cache
 const photoCache={};
