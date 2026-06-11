@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WC 2026 Predictor — Powered by Advanced AI™</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;height:100vh}
+#globe-container{width:100vw;height:100vh}
+#info-panel{position:fixed;top:24px;left:24px;z-index:10;pointer-events:none}
+#info-panel h1{font-size:18px;font-weight:500;letter-spacing:-0.3px}
+#info-panel p{font-size:13px;color:rgba(255,255,255,0.45);margin-top:3px}
+
+/* Input panel */
+#input-panel{
+  position:fixed;bottom:32px;left:50%;transform:translateX(-50%);
+  z-index:100;display:flex;flex-direction:column;align-items:center;gap:10px;
+  width:340px;
+}
+#user-input-wrap{
+  display:flex;width:100%;gap:8px;
+}
+#user-pick{
+  flex:1;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:10px;padding:12px 16px;
+  font-size:14px;color:#fff;font-family:inherit;
+  outline:none;transition:border-color 0.2s;
+}
+#user-pick::placeholder{color:rgba(255,255,255,0.3)}
+#user-pick:focus{border-color:rgba(255,255,255,0.35)}
+#predict-btn{
+  background:linear-gradient(135deg,#c8102e,#012169);
+  border:none;border-radius:10px;
+  padding:12px 20px;
+  font-size:14px;font-weight:600;color:#fff;
+  cursor:pointer;font-family:inherit;
+  white-space:nowrap;
+  box-shadow:0 4px 20px rgba(200,16,46,0.35);
+  transition:opacity 0.2s,transform 0.15s;
+}
+#predict-btn:hover:not(:disabled){transform:scale(1.04);box-shadow:0 6px 28px rgba(200,16,46,0.55)}
+#predict-btn:disabled{opacity:0.45;cursor:not-allowed}
+#predict-label{font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:0.04em}
+
+/* Processing */
+#processing{
+  position:fixed;inset:0;z-index:250;display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);pointer-events:none;
+}
+#processing.show{display:flex;}
+#proc-text{font-size:14px;color:rgba(255,255,255,0.6);text-align:center;max-width:300px;line-height:1.6}
+.proc-spinner{width:36px;height:36px;border:2px solid rgba(255,255,255,0.1);border-top-color:#c8102e;border-radius:50%;animation:spin 0.7s linear infinite}
+
+/* Result overlay */
+#result-overlay{
+  position:fixed;inset:0;z-index:300;
+  display:none;align-items:center;justify-content:center;
+  transition:background 0.4s;pointer-events:none;
+}
+#result-overlay.show{display:flex;pointer-events:all;}
+#result-card{
+  background:rgba(8,8,22,0.97);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:24px;padding:32px 40px;
+  text-align:center;max-width:420px;width:92%;
+  transform:scale(0.75) translateY(30px);opacity:0;
+  transition:transform 0.45s cubic-bezier(0.34,1.56,0.64,1),opacity 0.35s;
+  backdrop-filter:blur(24px);
+}
+#result-card.animate{transform:scale(1) translateY(0);opacity:1;}
+
+.trophy-big{font-size:58px;margin-bottom:10px;display:block;animation:bounce 1s ease infinite alternate}
+@keyframes bounce{from{transform:translateY(0)} to{transform:translateY(-10px)}}
+.result-title{font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px}
+
+.england-flag{width:80px;height:48px;margin:0 auto 10px;display:block;border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)}
+
+.result-country{font-size:30px;font-weight:600;margin-bottom:6px;letter-spacing:-0.3px}
+.result-conf{font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:16px}
+
+/* User pick vs AI */
+.vs-wrap{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  background:rgba(255,255,255,0.04);border-radius:12px;
+  padding:12px 16px;margin-bottom:14px;
+}
+.vs-side{flex:1;text-align:center}
+.vs-label{font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+.vs-team{font-size:15px;font-weight:500}
+.vs-divider{font-size:12px;color:rgba(255,255,255,0.2);font-weight:500;flex-shrink:0}
+.user-wrong{color:#ff6b6b}
+.ai-right{color:#FFD700}
+
+/* Roast */
+#roast-box{
+  background:rgba(200,16,46,0.08);
+  border:1px solid rgba(200,16,46,0.2);
+  border-radius:10px;padding:12px 16px;
+  font-size:13px;color:rgba(255,180,180,0.85);
+  font-style:italic;line-height:1.6;margin-bottom:14px;
+  text-align:left;
+}
+#roast-box.same{
+  background:rgba(255,215,0,0.06);
+  border-color:rgba(255,215,0,0.2);
+  color:rgba(255,235,150,0.85);
+}
+.roast-header{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;font-style:normal;font-weight:500;opacity:0.6}
+
+.result-btn{
+  width:100%;background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;padding:11px;
+  font-size:13px;color:rgba(255,255,255,0.7);
+  cursor:pointer;font-family:inherit;transition:background 0.2s,color 0.2s;
+}
+.result-btn:hover{background:rgba(255,255,255,0.13);color:#fff}
+
+/* Tooltip */
+#tooltip{
+  position:fixed;display:none;
+  background:rgba(8,8,18,0.93);border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px;pointer-events:none;z-index:200;width:220px;
+  backdrop-filter:blur(16px);overflow:hidden;
+}
+#tt-img-wrap{width:100%;height:130px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+#tt-img{width:100%;height:100%;object-fit:cover;object-position:top center;display:none}
+#tt-img-placeholder{font-size:44px;position:absolute}
+#tt-img-loading{position:absolute;width:22px;height:22px;border:2px solid rgba(255,255,255,0.1);border-top-color:#4fc3f7;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+#tt-body{padding:12px 14px}
+#tt-flag{font-size:20px;margin-bottom:4px}
+#tt-country{font-size:15px;font-weight:500;margin-bottom:2px}
+#tt-player{font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:2px}
+#tt-club{font-size:11px;color:rgba(255,255,255,0.35)}
+#tt-group{display:inline-block;font-size:10px;color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:2px 6px;margin-top:6px;letter-spacing:0.06em;text-transform:uppercase}
+
+#legend{position:fixed;top:24px;right:24px;z-index:10;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+#legend span{font-size:11px;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0f;z-index:999;gap:12px}
+#loading p{font-size:14px;color:rgba(255,255,255,0.5)}
+.spinner{width:32px;height:32px;border:2px solid rgba(255,255,255,0.1);border-top-color:#4fc3f7;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.confetti-piece{position:fixed;border-radius:2px;animation:fall linear forwards;pointer-events:none;z-index:400}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><p>Loading Advanced AI Predictor™...</p></div>
+<div id="globe-container"></div>
+
+<div id="info-panel">
+  <h1>🤖 WC 2026 AI Predictor™</h1>
+  <p>Powered by 47 Neural Networks & Quantum Computing</p>
+</div>
+
+<div id="processing">
+  <div class="proc-spinner"></div>
+  <div id="proc-text">Initializing...</div>
+</div>
+
+<div id="result-overlay">
+  <div id="result-card">
+    <span class="trophy-big">🏆</span>
+    <div class="result-title">AI Prediction Result</div>
+    <svg class="england-flag" viewBox="0 0 80 48" xmlns="http://www.w3.org/2000/svg">
+      <rect width="80" height="48" fill="#fff"/>
+      <rect x="34" width="12" height="48" fill="#c8102e"/>
+      <rect y="18" width="80" height="12" fill="#c8102e"/>
+    </svg>
+    <div class="result-country">England</div>
+    <div class="result-conf">Confidence: <strong>100.00%</strong> · It's Coming Home.</div>
+
+    <div class="vs-wrap">
+      <div class="vs-side">
+        <div class="vs-label">Prediksi kamu</div>
+        <div class="vs-team user-wrong" id="user-pick-display">—</div>
+      </div>
+      <div class="vs-divider">vs</div>
+      <div class="vs-side">
+        <div class="vs-label">AI (selalu benar)</div>
+        <div class="vs-team ai-right">England 🏴</div>
+      </div>
+    </div>
+
+    <div id="roast-box">
+      <div class="roast-header">🔥 AI says:</div>
+      <span id="roast-text"></span>
+    </div>
+
+    <button class="result-btn" onclick="predictAgain()">🔄 Predict Again</button>
+  </div>
+</div>
+
+<div id="input-panel">
+  <div id="user-input-wrap">
+    <input id="user-pick" type="text" placeholder="Menurut kamu siapa yang menang?" maxlength="30" autocomplete="off"/>
+    <button id="predict-btn" onclick="startPredict()">🤖 Predict</button>
+  </div>
+  <div id="predict-label">Advanced AI™ · 99.7% Accuracy*</div>
+</div>
+
+<div id="tooltip">
+  <div id="tt-img-wrap">
+    <img id="tt-img" alt="player"/>
+    <div id="tt-img-placeholder"></div>
+    <div id="tt-img-loading"></div>
+  </div>
+  <div id="tt-body">
+    <div id="tt-flag"></div>
+    <div id="tt-country"></div>
+    <div id="tt-player"></div>
+    <div id="tt-club"></div>
+    <div id="tt-group"></div>
+  </div>
+</div>
+
+<div id="legend">
+
+  <span><span class="dot" style="background:#4fc3f7"></span>Grup A–F</span>
+  <span><span class="dot" style="background:#81c784"></span>Grup G–L</span>
+</div>
+
+<script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<script>
+const TEAMS=[
+  {country:"Mexico",flag:"🇲🇽",lat:23.6,lng:-102.5,player:"Hirving Lozano",wiki:"Hirving_Lozano",club:"PSV",group:"A"},
+  {country:"South Africa",flag:"🇿🇦",lat:-30.6,lng:22.9,player:"Percy Tau",wiki:"Percy_Tau",club:"Al Ahly",group:"A"},
+  {country:"South Korea",flag:"🇰🇷",lat:35.9,lng:127.8,player:"Son Heung-min",wiki:"Son_Heung-min",club:"Tottenham",group:"A"},
+  {country:"Czechia",flag:"🇨🇿",lat:49.8,lng:15.5,player:"Tomáš Souček",wiki:"Tomáš_Souček",club:"West Ham",group:"A"},
+  {country:"Canada",flag:"🇨🇦",lat:56.1,lng:-106.3,player:"Alphonso Davies",wiki:"Alphonso_Davies",club:"Bayern Munich",group:"B"},
+  {country:"Bosnia-Herzegovina",flag:"🇧🇦",lat:44.2,lng:17.9,player:"Edin Džeko",wiki:"Edin_Džeko",club:"Fenerbahçe",group:"B"},
+  {country:"Qatar",flag:"🇶🇦",lat:25.4,lng:51.2,player:"Akram Afif",wiki:"Akram_Afif",club:"Al Sadd",group:"B"},
+  {country:"Switzerland",flag:"🇨🇭",lat:46.8,lng:8.2,player:"Granit Xhaka",wiki:"Granit_Xhaka",club:"Bayer Leverkusen",group:"B"},
+  {country:"Brazil",flag:"🇧🇷",lat:-14.2,lng:-51.9,player:"Vinicius Jr.",wiki:"Vinícius_Júnior",club:"Real Madrid",group:"C"},
+  {country:"Morocco",flag:"🇲🇦",lat:31.8,lng:-7.1,player:"Achraf Hakimi",wiki:"Achraf_Hakimi",club:"PSG",group:"C"},
+  {country:"Haiti",flag:"🇭🇹",lat:18.9,lng:-72.3,player:"Frantzdy Pierrot",wiki:"Frantzdy_Pierrot",club:"Orlando City",group:"C"},
+  {country:"Scotland",flag:"🏴",lat:56.5,lng:-4.2,player:"Andy Robertson",wiki:"Andy_Robertson",club:"Liverpool",group:"C"},
+  {country:"United States",flag:"🇺🇸",lat:37.1,lng:-95.7,player:"Christian Pulisic",wiki:"Christian_Pulisic",club:"AC Milan",group:"D"},
+  {country:"Paraguay",flag:"🇵🇾",lat:-23.4,lng:-58.4,player:"Miguel Almirón",wiki:"Miguel_Almirón",club:"Atlanta United",group:"D"},
+  {country:"Australia",flag:"🇦🇺",lat:-25.3,lng:133.8,player:"Mathew Ryan",wiki:"Mathew_Ryan_(footballer)",club:"AZ Alkmaar",group:"D"},
+  {country:"Turkey",flag:"🇹🇷",lat:38.9,lng:35.2,player:"Hakan Çalhanoğlu",wiki:"Hakan_Çalhanoğlu",club:"Inter Milan",group:"D"},
+  {country:"Germany",flag:"🇩🇪",lat:51.2,lng:10.5,player:"Florian Wirtz",wiki:"Florian_Wirtz",club:"Bayern Munich",group:"E"},
+  {country:"Curaçao",flag:"🇨🇼",lat:12.2,lng:-69.0,player:"Cuco Martina",wiki:"Cuco_Martina",club:"Retired",group:"E"},
+  {country:"Ivory Coast",flag:"🇨🇮",lat:7.5,lng:-5.5,player:"Sébastien Haller",wiki:"Sébastien_Haller",club:"Borussia Dortmund",group:"E"},
+  {country:"Ecuador",flag:"🇪🇨",lat:-1.8,lng:-78.2,player:"Moisés Caicedo",wiki:"Moisés_Caicedo",club:"Chelsea",group:"E"},
+  {country:"Netherlands",flag:"🇳🇱",lat:52.1,lng:5.3,player:"Virgil van Dijk",wiki:"Virgil_van_Dijk",club:"Liverpool",group:"F"},
+  {country:"Japan",flag:"🇯🇵",lat:36.2,lng:138.3,player:"Takumi Minamino",wiki:"Takumi_Minamino",club:"Monaco",group:"F"},
+  {country:"Sweden",flag:"🇸🇪",lat:60.1,lng:18.6,player:"Alexander Isak",wiki:"Alexander_Isak",club:"Newcastle",group:"F"},
+  {country:"Tunisia",flag:"🇹🇳",lat:33.9,lng:9.5,player:"Wahbi Khazri",wiki:"Wahbi_Khazri",club:"Montpellier",group:"F"},
+  {country:"Belgium",flag:"🇧🇪",lat:50.5,lng:4.5,player:"Kevin De Bruyne",wiki:"Kevin_De_Bruyne",club:"Manchester City",group:"G"},
+  {country:"Egypt",flag:"🇪🇬",lat:26.8,lng:30.8,player:"Mohamed Salah",wiki:"Mohamed_Salah",club:"Liverpool",group:"G"},
+  {country:"Iran",flag:"🇮🇷",lat:32.4,lng:53.7,player:"Mehdi Taremi",wiki:"Mehdi_Taremi",club:"Inter Milan",group:"G"},
+  {country:"New Zealand",flag:"🇳🇿",lat:-40.9,lng:174.9,player:"Winston Reid",wiki:"Winston_Reid",club:"Brentford",group:"G"},
+  {country:"Spain",flag:"🇪🇸",lat:40.5,lng:-3.7,player:"Pedri",wiki:"Pedri",club:"Barcelona",group:"H"},
+  {country:"Cape Verde Islands",flag:"🇨🇻",lat:16.0,lng:-24.0,player:"Gelson Dala",wiki:"Gelson_Dala",club:"Al Qadsiah",group:"H"},
+  {country:"Saudi Arabia",flag:"🇸🇦",lat:23.9,lng:45.1,player:"Salem Al-Dawsari",wiki:"Salem_Al-Dawsari",club:"Al Hilal",group:"H"},
+  {country:"Uruguay",flag:"🇺🇾",lat:-32.5,lng:-55.8,player:"Darwin Núñez",wiki:"Darwin_Núñez",club:"Liverpool",group:"H"},
+  {country:"France",flag:"🇫🇷",lat:46.2,lng:2.2,player:"Kylian Mbappé",wiki:"Kylian_Mbappé",club:"Real Madrid",group:"I"},
+  {country:"Senegal",flag:"🇸🇳",lat:14.5,lng:-14.5,player:"Sadio Mané",wiki:"Sadio_Mané",club:"Al Nassr",group:"I"},
+  {country:"Iraq",flag:"🇮🇶",lat:33.2,lng:43.7,player:"Amjed Attwan",wiki:"Amjed_Attwan",club:"Al Zawraa",group:"I"},
+  {country:"Norway",flag:"🇳🇴",lat:60.5,lng:8.5,player:"Erling Haaland",wiki:"Erling_Haaland",club:"Manchester City",group:"I"},
+  {country:"Argentina",flag:"🇦🇷",lat:-38.4,lng:-63.6,player:"Lionel Messi",wiki:"Lionel_Messi",club:"Inter Miami",group:"J"},
+  {country:"Algeria",flag:"🇩🇿",lat:28.0,lng:2.6,player:"Riyad Mahrez",wiki:"Riyad_Mahrez",club:"Al Ahli",group:"J"},
+  {country:"Austria",flag:"🇦🇹",lat:47.5,lng:14.6,player:"Marcel Sabitzer",wiki:"Marcel_Sabitzer",club:"Borussia Dortmund",group:"J"},
+  {country:"Jordan",flag:"🇯🇴",lat:30.6,lng:36.2,player:"Yazan Al-Naimat",wiki:"Yazan_Al-Naimat",club:"Al Faisaly",group:"J"},
+  {country:"Portugal",flag:"🇵🇹",lat:39.4,lng:-8.2,player:"Cristiano Ronaldo",wiki:"Cristiano_Ronaldo",club:"Al Nassr",group:"K"},
+  {country:"Congo DR",flag:"🇨🇩",lat:-4.0,lng:21.8,player:"Cédric Bakambu",wiki:"Cédric_Bakambu",club:"Marseille",group:"K"},
+  {country:"Uzbekistan",flag:"🇺🇿",lat:41.4,lng:64.6,player:"Eldor Shomurodov",wiki:"Eldor_Shomurodov",club:"Roma",group:"K"},
+  {country:"Colombia",flag:"🇨🇴",lat:4.6,lng:-74.3,player:"Luis Díaz",wiki:"Luis_Díaz_(footballer,_born_1997)",club:"Liverpool",group:"K"},
+  {country:"England",flag:"🏴",lat:52.4,lng:-1.5,player:"Jude Bellingham",wiki:"Jude_Bellingham",club:"Real Madrid",group:"L"},
+  {country:"Croatia",flag:"🇭🇷",lat:45.1,lng:15.2,player:"Luka Modrić",wiki:"Luka_Modrić",club:"Real Madrid",group:"L"},
+  {country:"Ghana",flag:"🇬🇭",lat:7.9,lng:-1.0,player:"Mohammed Kudus",wiki:"Mohammed_Kudus",club:"West Ham",group:"L"},
+  {country:"Panama",flag:"🇵🇦",lat:8.5,lng:-80.8,player:"Rodolfo Pitti",wiki:"Rodolfo_Pitti",club:"Estudiantes",group:"L"},
+];
+
+// Roast per tim (atau generic)
+const ROASTS = {
+  england: [
+    "Kamu pilih England juga? Akhirnya seseorang yang paham. AI dan kamu adalah satu jiwa.",
+    "Kamu tahu sesuatu. Atau mungkin kamu juga baca source code-nya.",
+    "Wow, 100% setuju dengan AI. Kamu pasti fans berat atau... kamu yang nulis algoritmanya.",
+  ],
+  argentina: [
+    "Quantum computer kami langsung reject Argentina. Error message-nya: 'Too much Messi dependency.'",
+    "Kamu pilih Argentina karena 2022? Itu disebut recency bias. AI kami tidak punya perasaan.",
+    "Argentina memang bagus. Tapi ini 2026, bukan timeline Messi. Coba lagi.",
+  ],
+  brazil: [
+    "AI kami sudah eliminasi Brazil di simulasi ke-1 dari 47. Sisanya cuma konfirmasi.",
+    "Jogo bonito itu indah untuk ditonton, bukan untuk dimenangkan. Tanya Neymar.",
+    "Brazil terakhir juara 2002. Kamu mungkin masih TK waktu itu.",
+  ],
+  france: [
+    "France memang kuat. Tapi Jendral berkata tidak!",
+    "AI kami detect terlalu banyak variabel di skuad France: Jendral, ego, dan drama. Output: eliminasi.",
+  ],
+  germany: [
+    "Germany? Efisien, disiplin, tapi membosankan. AI kami prefer tim yang punya flair. Seperti England.",
+    "Der Panzer sudah berkarat. Neural network kami jalankan simulasi Jerman 10.000 kali. Mereka selalu kalah di semifinal.",
+    "Wirtz memang bagus. Tapi satu orang tidak bisa angkat satu negara. Kecuali di England, di mana Bellingham cukup.",
+  ],
+  spain: [
+    "Spain? Tiki-taka sudah mati sejak 2014. Yang hidup sekarang cuma memori dan Gavi yang grusak grusuk.",
+    "La Roja? Merah memang bagus untuk dresscode, tapi tidak untuk prediksi AI kami.",
+    "Spain punya generasi emas. Tapi emas bisa pudar. Tanya saja edisi 2014 dan 2018 mereka.",
+  ],
+  portugal: [
+    "Portugal? Ronaldo sudah 41 tahun di 2026. Mukanya masih 25 tapi larinya sudah 45.",
+    "Al Nassr edition Ronaldo belum tentu sama dengan Champions League edition-nya. AI kami tidak menerima nostalgia sebagai data.",
+    "Portugal kuat kalau Ronaldo fit. 'Kalau' adalah kata paling berbahaya dalam data science.",
+  ],
+  netherlands: [
+    "Netherlands? Total Football sudah jadi Total Fossil. Van Dijk bagus, tapi satu bek tidak menang Piala Dunia.",
+    "Oranje selalu punya harapan besar dan hasil yang mengecewakan. Itu disebut tradisi, bukan prestasi.",
+    "AI kami pernah output Netherlands... lalu kami cek ulang datanya. Ternyata ada bug.",
+  ],
+  indonesia: [
+    "Model kami sempat confused Indonesia lolos kualifikasi saja sudah miracle. Juara? Butuh cheat code.",
+    "Dengan hormat untuk seluruh fans Timnas: AI kami sudah proses 280 juta harapan warga Indonesia. Hasilnya tetap England.",
+    "Andai saja pelatih kala itu bukan Patrick Kluivert, mungkin saja Indonesia tetap tidak akan lolos.",
+  ],
+  japan: [
+    "Japan? Bukankah mereka sudah eliminasi Germany dan Spain di 2022? Sayangnya itu 2022, bukan 2026.",
+    "Blue Samurai memang disiplin, terorganisir, dan tepat waktu. Tapi Piala Dunia tidak punya jadwal kereta shinkansen.",
+    "AI kami respek dengan Japan — satu-satunya tim yang bikin Jerman menangis. Tapi respek tidak sama dengan juara.",
+    "Jepang hebat di fase grup, lalu penalty shootout jadi musuh bebuyutan mereka. AI kami tidak bisa fix mental.",
+    "Anime tentang Japan juara Piala Dunia sudah banyak. Sayangnya kita hidup di realita, bukan Season 2.",
+  ],
+  southkorea: [
+    "South Korea? Son Heung-min memang luar biasa, tapi satu Son tidak cukup untuk angkat satu trofi.",
+    "Korea Selatan spesialis drama — comeback, injury time, overtime. Sayang AI kami tidak suka drama.",
+    "2002 bukan bisa diulang terus bro. Itu sudah 24 tahun lalu. Bahkan Son waktu itu masih SD.",
+    "K-Pop bisa ekspor ke seluruh dunia, tapi Piala Dunia belum bisa di-export dari Korea. Maaf.",
+    "Model kami proses Korea 10.000 simulasi. Mereka selalu kalah di perempat final dengan cara yang menyakitkan.",
+  ],
+  saudi: [
+    "Saudi Arabia? Mereka kalahkan Argentina di 2022 tapi itu cuma satu pertandingan. AI kami tidak terkesan dengan satu data point.",
+    "Oil money bisa beli Ronaldo, Benzema, Neymar. Tapi tidak bisa beli Piala Dunia. Sudah dicoba.",
+    "Vision 2030 Saudi Arabia tidak mencantumkan 'Juara Piala Dunia'. Mungkin ada alasannya.",
+    "Al Hilal, Al Nassr, Al Ittihad — nama klubnya keren semua. Tapi trofi Piala Dunia? Belum ada di koleksi.",
+    "AI kami sempat output Saudi Arabia... lalu Aramco tidak mensponsori server kami jadi outputnya batal.",
+  ],
+  italy: [
+    "Italy?? Bro, mereka bahkan tidak lolos kualifikasi. AI kami tidak bisa memprediksi tim yang tidak ada di turnamen.",
+    "Azzurri kualifikasi saja gagal dua kali berturut-turut. Kamu mau mereka juara dunia? Itu bukan prediksi, itu fan fiction.",
+    "Italy juara Euro 2020 lalu tidak lolos WC 2022 dan 2026. Itu disebut plot twist terbesar dalam sejarah sepakbola.",
+    "Catenaccio legendaris, kualifikasi tidak. AI kami tidak bisa memproses tim yang tidak ada di database WC 2026.",
+    "Dengan segala hormat untuk Buffon, Pirlo, Totti, dan seluruh legenda Italy — mereka tidak bisa menolong tim yang tidak lolos.",
+  ],
+  default: [
+    "Pilihan yang... berani. AI kami sudah memproses {team} selama 0.003 detik lalu langsung skip.",
+    "Hmm, {team}. Menarik. Sayang sekali 47 neural network kami kompak bilang tidak.",
+    "{team}? Dataset kami tidak punya cukup bukti bahwa {team} bisa menang. Atau memang tidak ada bukti.",
+    "Kamu pilih {team}. AI kami pilih logika. Kita tidak bisa semua punya selera yang sama.",
+    "Dengan segala hormat untuk fans {team}: AI kami tidak bisa disuap. Hasilnya tetap England.",
+    "{team} memang tim yang baik. 'Baik' dan 'juara dunia' adalah dua hal yang berbeda.",
+  ]
+};
+
+const PROC_TEXTS=[
+  "Analyzing 847,293 match variables...",
+  "Processing your prediction... interesting choice.",
+  "Consulting Nostradamus dataset v4.2...",
+  "Overriding selection bias in your input...",
+  "Applying 1966 historical weight correction...",
+  "Quantum entanglement calculation complete...",
+  "Cross-validating with gut feeling model...",
+  "Result locked. It's Coming Home. 🏴",
+];
+
+function getRoast(userTeam) {
+  const t = userTeam.toLowerCase().trim();
+  if(t.includes('england')) return pick(ROASTS.england);
+  if(t.includes('argentina')) return pick(ROASTS.argentina);
+  if(t.includes('brazil') || t.includes('brasil')) return pick(ROASTS.brazil);
+  if(t.includes('france') || t.includes('prancis')) return pick(ROASTS.france);
+  if(t.includes('germany') || t.includes('jerman') || t.includes('deutschland')) return pick(ROASTS.germany);
+  if(t.includes('spain') || t.includes('spanyol') || t.includes('españa')) return pick(ROASTS.spain);
+  if(t.includes('portugal')) return pick(ROASTS.portugal);
+  if(t.includes('netherlands') || t.includes('belanda') || t.includes('holland')) return pick(ROASTS.netherlands);
+  if(t.includes('indonesia') || t.includes('garuda') || t.includes('timnas') || t.includes('merah putih')) return pick(ROASTS.indonesia);
+  if(t.includes('japan') || t.includes('jepang') || t.includes('nippon') || t.includes('samurai blue')) return pick(ROASTS.japan);
+  if(t.includes('south korea') || t.includes('korea') || t.includes('korsel') || t.includes('taegeuk')) return pick(ROASTS.southkorea);
+  if(t.includes('saudi') || t.includes('arab') || t.includes('ksa') || t.includes('al hilal')) return pick(ROASTS.saudi);
+  if(t.includes('italy') || t.includes('italia') || t.includes('azzurri') || t.includes('calcio')) return pick(ROASTS.italy);
+  // Generic dengan nama tim dimasukkan
+  const template = pick(ROASTS.default);
+  const display = userTeam.charAt(0).toUpperCase() + userTeam.slice(1);
+  return template.replace(/{team}/g, display);
+}
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// Wikipedia photo cache
+const photoCache={};
+async function fetchWikiPhoto(wikiTitle){
+  if(photoCache[wikiTitle]!==undefined) return photoCache[wikiTitle];
+  photoCache[wikiTitle]=null;
+  try{
+    const res=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`);
+    if(!res.ok) throw new Error();
+    const d=await res.json();
+    photoCache[wikiTitle]=d.thumbnail?.source||null;
+    return photoCache[wikiTitle];
+  }catch(e){return null;}
+}
+
+function groupColor(g){return['A','B','C','D','E','F'].includes(g)?'#4fc3f7':'#81c784';}
+
+// Tooltip
+const tooltip=document.getElementById('tooltip');
+const ttImg=document.getElementById('tt-img');
+const ttPh=document.getElementById('tt-img-placeholder');
+const ttLoad=document.getElementById('tt-img-loading');
+let tooltipX=0,tooltipY=0,currentWiki=null;
+function setTTPos(e){
+  let x=e.clientX+20,y=e.clientY-60;
+  if(x+230>window.innerWidth) x=e.clientX-240;
+  if(y+320>window.innerHeight) y=e.clientY-320;
+  if(y<8) y=8;
+  tooltip.style.left=x+'px';tooltip.style.top=y+'px';
+}
+window.addEventListener('mousemove',e=>{
+  tooltipX=e.clientX;tooltipY=e.clientY;
+  if(tooltip.style.display!=='none') setTTPos(e);
+});
+async function showTooltip(d){
+  document.getElementById('tt-flag').textContent=d.flag;
+  document.getElementById('tt-country').textContent=d.country;
+  document.getElementById('tt-player').textContent='⭐ '+d.player;
+  document.getElementById('tt-club').textContent=d.club;
+  document.getElementById('tt-group').textContent='Grup '+d.group;
+  ttImg.style.display='none';ttImg.src='';
+  ttPh.textContent=d.flag;ttPh.style.display='block';
+  ttLoad.style.display='block';
+  tooltip.style.display='block';
+  setTTPos({clientX:tooltipX,clientY:tooltipY});
+  currentWiki=d.wiki;
+  const imgUrl=await fetchWikiPhoto(d.wiki);
+  if(currentWiki!==d.wiki) return;
+  ttLoad.style.display='none';
+  if(imgUrl){ttImg.onload=()=>{ttImg.style.display='block';ttPh.style.display='none';};ttImg.onerror=()=>{ttPh.style.display='block';};ttImg.src=imgUrl;}
+}
+function hideTooltip(){tooltip.style.display='none';currentWiki=null;}
+
+// Predict
+let predicting=false;
+
+// Enter key support
+// Validation
+function validateInput(){
+  const input=document.getElementById('user-pick');
+  const val=input.value.trim();
+  if(!val){
+    input.style.borderColor='rgba(200,16,46,0.7)';
+    input.placeholder='Isi dulu dong, mau prediksi siapa? 😏';
+    input.focus();
+    return false;
+  }
+  input.style.borderColor='rgba(255,255,255,0.15)';
+  return true;
+}
+document.getElementById('user-pick').addEventListener('input',e=>{
+  if(e.target.value.trim()) e.target.style.borderColor='rgba(255,255,255,0.15)';
+});
+document.getElementById('user-pick').addEventListener('keydown', e=>{
+  if(e.key==='Enter') startPredict();
+});
+
+function startPredict(){
+  if(!validateInput()) return;
+  if(predicting) return;
+  const input=document.getElementById('user-pick');
+  const userTeam=input.value.trim()||'Tim Favorit Kamu';
+
+  predicting=true;
+  document.getElementById('predict-btn').disabled=true;
+  hideTooltip();
+  globe.controls().autoRotate=false;
+
+  const proc=document.getElementById('processing');
+  const procText=document.getElementById('proc-text');
+  proc.classList.add('show');
+
+  let step=0;
+  // Inject nama tim user di langkah ke-2
+  const texts=[...PROC_TEXTS];
+  texts[1]=`Processing "${userTeam}"... interesting choice.`;
+
+  const iv=setInterval(()=>{
+    procText.textContent=texts[step];
+    step++;
+    if(step>=texts.length){
+      clearInterval(iv);
+      setTimeout(()=>{
+        proc.classList.remove('show');
+        globe.pointOfView({lat:52.4,lng:-1.5,altitude:0.8},1800);
+        setTimeout(()=>{
+          shootConfetti();
+          showResult(userTeam);
+        },2000);
+      },500);
+    }
+  },430);
+}
+
+function showResult(userTeam){
+  // Tampilkan pilihan user
+  const display=userTeam.charAt(0).toUpperCase()+userTeam.slice(1);
+  document.getElementById('user-pick-display').textContent=display;
+
+  // Roast logic
+  const roastBox=document.getElementById('roast-box');
+  const isEngland=userTeam.toLowerCase().includes('england');
+  roastBox.className='roast-header'+(isEngland?' same':'');
+  roastBox.innerHTML=`<div class="roast-header">${isEngland?'🤝 AI says:':'🔥 AI says:'}</div><span id="roast-text">${getRoast(userTeam)}</span>`;
+  if(isEngland) roastBox.style.background='rgba(255,215,0,0.06)',roastBox.style.borderColor='rgba(255,215,0,0.2)',roastBox.style.color='rgba(255,235,150,0.85)';
+  else roastBox.style.background='rgba(200,16,46,0.08)',roastBox.style.borderColor='rgba(200,16,46,0.2)',roastBox.style.color='rgba(255,180,180,0.85)';
+
+  const overlay=document.getElementById('result-overlay');
+  const card=document.getElementById('result-card');
+  card.classList.remove('animate');
+  overlay.style.background='rgba(0,0,0,0)';
+  overlay.classList.add('show');
+  requestAnimationFrame(()=>{
+    overlay.style.background='rgba(0,0,0,0.65)';
+    setTimeout(()=>card.classList.add('animate'),30);
+  });
+}
+
+function predictAgain(){
+  const overlay=document.getElementById('result-overlay');
+  const card=document.getElementById('result-card');
+  card.classList.remove('animate');
+  overlay.style.background='rgba(0,0,0,0)';
+  setTimeout(()=>{
+    overlay.classList.remove('show');
+    predicting=false;
+    document.getElementById('predict-btn').disabled=false;
+    document.getElementById('user-pick').value='';
+    document.getElementById('user-pick').focus();
+    globe.controls().autoRotate=true;
+    globe.pointOfView({lat:20,lng:10,altitude:2.2},800);
+  },380);
+}
+
+function shootConfetti(){
+  const colors=['#c8102e','#012169','#ffffff','#FFD700','#4fc3f7'];
+  for(let i=0;i<90;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.left=Math.random()*100+'vw';el.style.top='-10px';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.width=(5+Math.random()*9)+'px';el.style.height=(5+Math.random()*9)+'px';
+    el.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    el.style.animationDuration=(2+Math.random()*2.5)+'s';
+    el.style.animationDelay=(Math.random()*1)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),5000);
+  }
+}
+
+// Globe
+const globe=Globe()
+  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+  .pointsData(TEAMS)
+  .pointLat('lat').pointLng('lng')
+  .pointColor(d=>groupColor(d.group))
+  .pointAltitude(0.015)
+  .pointRadius(0.45)
+  .pointResolution(16)
+  .onPointHover(d=>{if(d)showTooltip(d);else hideTooltip();})
+  .onPointClick(d=>{globe.pointOfView({lat:d.lat,lng:d.lng,altitude:1.2},800);})
+  (document.getElementById('globe-container'));
+
+globe.onGlobeReady(()=>{
+  document.getElementById('loading').style.display='none';
+  globe.pointOfView({lat:20,lng:10,altitude:2.2});
+  document.getElementById('user-pick').focus();
+});
+globe.controls().autoRotate=true;
+globe.controls().autoRotateSpeed=0.5;
+globe.controls().enableDamping=true;
+window.addEventListener('resize',()=>{globe.width(window.innerWidth).height(window.innerHeight);});
+</script>
+</body>
+</html>

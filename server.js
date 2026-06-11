@@ -1038,6 +1038,11 @@ app.get(['/tools/meme-generator', '/tools/meme-generator/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'meme-generator.html'));
 });
 
+// WC 2026 Predictor
+app.get(['/wc26_predictor', '/wc26_predictor/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'wc26_predictor.html'));
+});
+
 // ─── Maps ─────────────────────────────────────────────────────
 // Legacy redirects /map/* → /maps/*
 app.get(['/map', '/map/'], (_req, res) => res.redirect(301, '/maps/pocong'));
