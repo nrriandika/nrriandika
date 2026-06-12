@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KopDes Monitoring · Pemetaan & Pembangunan · nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/maps/kopdes_map.css" />
+</head>
+<body>
+
+  <div id="kd-app">
+
+    <!-- ─── Sidebar ─────────────────────────────────────────────── -->
+    <aside class="kd-sidebar" id="kd-sidebar">
+      <div class="kd-sidebar-scroll">
+
+        <div class="kd-header">
+          <a href="/" class="kd-back">
+            <svg viewBox="0 0 16 16" fill="none" width="12"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            nrriandika
+          </a>
+          <h1 class="kd-title">KopDes Monitoring</h1>
+          <p class="kd-subtitle" id="kd-subtitle">Progres Pemetaan & Pembangunan</p>
+        </div>
+
+        <!-- Layer Toggle -->
+        <div class="kd-section">
+          <div class="kd-label">Indikator</div>
+          <div class="kd-layers" id="kd-layers">
+            <label class="kd-layer active" data-val="pembangunan">
+              <input type="radio" name="kd-layer" value="pembangunan" checked />
+              <span class="kd-layer-swatch" style="background:linear-gradient(90deg,#C0142A,#F5A623,#1A7F3C)"></span>
+              <span class="kd-layer-name">% Pembangunan</span>
+            </label>
+            <label class="kd-layer" data-val="pemetaan">
+              <input type="radio" name="kd-layer" value="pemetaan" />
+              <span class="kd-layer-swatch" style="background:linear-gradient(90deg,#C0142A,#F5A623,#1A7F3C)"></span>
+              <span class="kd-layer-name">% Pemetaan</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="kd-section">
+          <div class="kd-label">Legenda</div>
+          <div class="kd-legend-bar" id="kd-legend-bar"></div>
+          <div class="kd-legend-ticks">
+            <span id="kd-leg-min">0%</span>
+            <span id="kd-leg-mid">50%</span>
+            <span id="kd-leg-max">100%</span>
+          </div>
+        </div>
+
+        <!-- Classification filter -->
+        <div class="kd-section">
+          <div class="kd-label">Klasifikasi · klik untuk filter</div>
+          <div id="kd-dist" class="kd-dist"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="kd-section">
+          <div class="kd-label">Rata-rata Nasional</div>
+          <div class="kd-stats" id="kd-stats"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="kd-footer-note">
+          <p id="kd-foot-window">Memuat rentang waktu…</p>
+          <p>Sumber: scraping otomatis · 38 provinsi.</p>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ─── Map Area ──────────────────────────────────────────────── -->
+    <div class="kd-map-wrap">
+      <div id="kd-map"></div>
+
+      <button class="kd-menu-btn" id="kd-menu-btn" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="kd-tooltip" id="kd-tooltip" style="display:none"></div>
+
+      <div class="kd-loading" id="kd-loading">
+        <div class="kd-loading-dots"><span></span><span></span><span></span></div>
+        <p>Memuat data peta…</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/maps/kopdes_map.js"></script>
+</body>
+</html>

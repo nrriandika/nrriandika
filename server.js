@@ -25,6 +25,7 @@ const https         = require('https');
 const Anthropic     = require('@anthropic-ai/sdk');
 const { GoogleGenAI } = require('@google/genai');
 const supabase      = require('./supabase');
+const supabaseAutomation = require('./supabase-automation');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -1059,6 +1060,9 @@ app.get(['/maps/kerentanan', '/maps/kerentanan/'], (_req, res) => {
 app.get(['/maps/prab_visit', '/maps/prab_visit/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'maps', 'kunjungan_map.html'));
 });
+app.get(['/maps/kopdes_monitoring', '/maps/kopdes_monitoring/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'maps', 'kopdes_map.html'));
+});
 app.get('/api/kunjungan/data', async (_req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase
@@ -1076,6 +1080,17 @@ app.get('/api/kerentanan/data', async (_req, res) => {
     .from('idx_eco_2025')
     .select('id,provinsi,kemiskinan,gini,tpt,skor_masalah,kategori,narasi_kategori,driver_utama')
     .order('skor_masalah', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data || []);
+});
+
+/** GET /api/automation/progress — dashboard "progress since start" dari project Supabase otomasi */
+app.get('/api/automation/progress', async (_req, res) => {
+  if (!supabaseAutomation) return res.status(503).json({ error: 'automation_db_not_configured' });
+  const { data, error } = await supabaseAutomation
+    .from('v_progress_since_start')
+    .select('*')
+    .order('pct_pembangunan_now', { ascending: false, nullsFirst: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });

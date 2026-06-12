@@ -1,0 +1,265 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0F141E;
+  --surface:   #141A28;
+  --surface2:  #1A2236;
+  --border:    rgba(255,255,255,0.07);
+  --text:      #E2E8F0;
+  --muted:     #7A8BA0;
+  --green:     #22C55E;
+  --amber:     #F5A623;
+  --red:       #EF4444;
+  --sidebar-w: 290px;
+}
+
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: 'Inter', system-ui, sans-serif; color: var(--text); font-size: 14px; }
+
+/* ─── Layout ─────────────────────────────────────────────────────── */
+#kd-app { display: flex; height: 100vh; }
+
+/* ─── Sidebar ────────────────────────────────────────────────────── */
+.kd-sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: transform 0.28s ease;
+}
+
+.kd-sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+.kd-header { display: flex; flex-direction: column; gap: 6px; }
+
+.kd-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 11px;
+  transition: color 0.15s;
+}
+.kd-back:hover { color: var(--text); }
+
+.kd-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; }
+.kd-subtitle { font-size: 11px; color: var(--muted); }
+
+/* ─── Section ────────────────────────────────────────────────────── */
+.kd-section { display: flex; flex-direction: column; gap: 9px; }
+
+.kd-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ─── Layer Toggle ───────────────────────────────────────────────── */
+.kd-layers { display: flex; flex-direction: column; gap: 3px; }
+
+.kd-layer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.kd-layer:hover { background: var(--surface2); }
+.kd-layer.active {
+  background: rgba(34,197,94,0.07);
+  border-color: rgba(34,197,94,0.2);
+}
+.kd-layer input { display: none; }
+
+.kd-layer-swatch {
+  width: 28px;
+  height: 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.kd-layer-name { font-size: 12px; font-weight: 500; }
+.kd-layer.active .kd-layer-name { color: var(--green); }
+
+/* ─── Legend ─────────────────────────────────────────────────────── */
+.kd-legend-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #C0142A, #F5A623, #1A7F3C);
+}
+
+.kd-legend-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ─── Classification filter ──────────────────────────────────────── */
+.kd-dist { display: flex; flex-direction: column; gap: 7px; }
+
+.kd-dist-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background 0.15s, opacity 0.15s;
+}
+.kd-dist-row:hover { background: var(--surface2); }
+.kd-dist-row.off { opacity: 0.32; }
+.kd-dist-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+.kd-dist-cat { font-size: 11px; color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kd-dist-bar-bg { flex: 1.5; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.kd-dist-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.kd-dist-n { font-size: 11px; color: var(--muted); min-width: 18px; text-align: right; }
+
+/* ─── Stats ──────────────────────────────────────────────────────── */
+.kd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+
+.kd-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.kd-stat-val { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+.kd-stat-key { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ─── Footer note ────────────────────────────────────────────────── */
+.kd-footer-note {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ─── Map area ───────────────────────────────────────────────────── */
+.kd-map-wrap { flex: 1; position: relative; overflow: hidden; }
+#kd-map { width: 100%; height: 100%; background: var(--bg); }
+
+/* ─── Menu btn (mobile) ──────────────────────────────────────────── */
+.kd-menu-btn {
+  display: none;
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 1001;
+  width: 36px; height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Tooltip ────────────────────────────────────────────────────── */
+.kd-tooltip {
+  position: absolute;
+  z-index: 2000;
+  pointer-events: none;
+  max-width: 260px;
+  min-width: 210px;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 13px 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.kd-tt-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; letter-spacing: -0.01em; }
+
+.kd-tt-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.kd-tt-badge--bergerak { background: rgba(34,197,94,0.12);  color: #22C55E; border: 1px solid rgba(34,197,94,0.25); }
+.kd-tt-badge--perlahan { background: rgba(245,166,35,0.15); color: #F5A623; border: 1px solid rgba(245,166,35,0.3); }
+.kd-tt-badge--stagnan  { background: rgba(192,20,42,0.15);  color: #E05C1A; border: 1px solid rgba(192,20,42,0.3); }
+
+.kd-tt-table { width: 100%; border-collapse: collapse; margin-bottom: 9px; }
+.kd-tt-table td { padding: 2px 0; font-size: 11px; line-height: 1.6; }
+.kd-tt-table td:first-child { color: var(--muted); }
+.kd-tt-table td:last-child  { text-align: right; font-weight: 600; }
+.kd-tt-delta-up   { color: #22C55E; font-weight: 600; }
+.kd-tt-delta-flat { color: var(--muted); }
+
+.kd-tt-foot { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+/* ─── Loading overlay ────────────────────────────────────────────── */
+.kd-loading {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 3000;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.kd-loading-dots { display: flex; gap: 6px; }
+.kd-loading-dots span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: kdPulse 1.2s ease-in-out infinite;
+}
+.kd-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.kd-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes kdPulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.7); }
+  50%       { opacity: 1;   transform: scale(1); }
+}
+
+/* ─── Leaflet overrides ──────────────────────────────────────────── */
+.leaflet-container { background: var(--bg) !important; }
+.leaflet-attribution-flag { display: none !important; }
+
+/* ─── Mobile ─────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .kd-sidebar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    transform: translateX(-100%);
+    z-index: 1002;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
+  .kd-sidebar.open { transform: translateX(0); }
+  .kd-menu-btn { display: flex; }
+}
