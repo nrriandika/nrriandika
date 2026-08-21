@@ -1063,6 +1063,9 @@ app.get(['/maps/prab_visit', '/maps/prab_visit/'], (_req, res) => {
 app.get(['/maps/kopdes_monitoring', '/maps/kopdes_monitoring/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'maps', 'kopdes_map.html'));
 });
+app.get(['/maps/hotspot_monitoring', '/maps/hotspot_monitoring/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'maps', 'hotspot_map.html'));
+});
 app.get('/api/kunjungan/data', async (_req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase
@@ -1082,6 +1085,33 @@ app.get('/api/kerentanan/data', async (_req, res) => {
     .order('skor_masalah', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
+});
+
+/** GET /api/hotspot/data — titik panas (paginasi, PostgREST dibatasi 1000/req) */
+app.get('/api/hotspot/data', async (_req, res) => {
+  if (!supabase) return res.json([]);
+
+  const COLS      = 'latitude,longitude,confidence_level,source,date,province,regency,satellite';
+  const PAGE      = 1000;
+  const MAX_ROWS  = 20000;
+  const out       = [];
+
+  try {
+    for (let from = 0; from < MAX_ROWS; from += PAGE) {
+      const { data, error } = await supabase
+        .from('hotspot_point')
+        .select(COLS)
+        .order('date', { ascending: false, nullsFirst: false })
+        .range(from, from + PAGE - 1);
+      if (error) return res.status(500).json({ error: error.message });
+      if (!data || !data.length) break;
+      out.push(...data);
+      if (data.length < PAGE) break;
+    }
+    res.json(out);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /** GET /api/automation/progress — dashboard "progress since start" dari project Supabase otomasi */

@@ -1,0 +1,288 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0F141E;
+  --surface:   #141A28;
+  --surface2:  #1A2236;
+  --border:    rgba(255,255,255,0.07);
+  --text:      #E2E8F0;
+  --muted:     #7A8BA0;
+  --accent:    #F5A623;
+  --red:       #DC2626;
+  --sidebar-w: 290px;
+}
+
+html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: 'Inter', system-ui, sans-serif; color: var(--text); font-size: 14px; }
+
+/* ─── Layout ─────────────────────────────────────────────────────── */
+#hs-app { display: flex; height: 100vh; }
+
+/* ─── Sidebar ────────────────────────────────────────────────────── */
+.hs-sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: transform 0.28s ease;
+}
+
+.hs-sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+.hs-header { display: flex; flex-direction: column; gap: 6px; }
+
+.hs-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 11px;
+  transition: color 0.15s;
+}
+.hs-back:hover { color: var(--text); }
+
+.hs-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; }
+.hs-subtitle { font-size: 11px; color: var(--muted); }
+
+/* ─── Section ────────────────────────────────────────────────────── */
+.hs-section { display: flex; flex-direction: column; gap: 9px; }
+
+.hs-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ─── Filter rows (source + confidence) ──────────────────────────── */
+.hs-filters { display: flex; flex-direction: column; gap: 3px; }
+
+.hs-filter {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  user-select: none;
+  opacity: 0.45;
+}
+.hs-filter:hover { background: var(--surface2); }
+.hs-filter.active {
+  opacity: 1;
+  background: rgba(245,166,35,0.06);
+  border-color: rgba(245,166,35,0.18);
+}
+.hs-filter:focus-visible { outline: 2px solid rgba(245,166,35,0.5); outline-offset: 1px; }
+
+.hs-filter-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+}
+.hs-filter-name { font-size: 12px; font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hs-filter-n { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hs-filter.active .hs-filter-n { color: var(--text); }
+
+.hs-hint { font-size: 10px; color: var(--muted); line-height: 1.5; }
+.hs-hint b { color: #F87171; font-weight: 600; }
+
+/* ─── Periode chips ──────────────────────────────────────────────── */
+.hs-periods { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.hs-period {
+  padding: 5px 11px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.hs-period:hover { color: var(--text); }
+.hs-period.active {
+  background: rgba(245,166,35,0.12);
+  border-color: rgba(245,166,35,0.35);
+  color: var(--accent);
+}
+
+/* ─── Distribution ───────────────────────────────────────────────── */
+.hs-dist { display: flex; flex-direction: column; gap: 7px; }
+
+.hs-dist-row { display: flex; align-items: center; gap: 8px; }
+.hs-dist-cat { font-size: 11px; color: var(--text); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hs-dist-bar-bg { flex: 1.2; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+.hs-dist-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+.hs-dist-n { font-size: 11px; color: var(--muted); min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; }
+.hs-dist-empty { font-size: 11px; color: var(--muted); }
+
+/* ─── Stats ──────────────────────────────────────────────────────── */
+.hs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+
+.hs-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.hs-stat-val { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+.hs-stat-key { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ─── Footer note ────────────────────────────────────────────────── */
+.hs-footer-note {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.hs-footer-note code { font-size: 10px; background: var(--surface2); padding: 1px 4px; border-radius: 4px; }
+
+/* ─── Map area ───────────────────────────────────────────────────── */
+.hs-map-wrap { flex: 1; position: relative; overflow: hidden; }
+#hs-map { width: 100%; height: 100%; background: var(--bg); }
+
+/* ─── Count badge ────────────────────────────────────────────────── */
+.hs-count-badge {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 1001;
+  background: rgba(20,26,40,0.92);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 6px 13px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+.hs-count-badge b { color: var(--accent); }
+
+/* ─── Menu btn (mobile) ──────────────────────────────────────────── */
+.hs-menu-btn {
+  display: none;
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 1001;
+  width: 36px; height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Tooltip ────────────────────────────────────────────────────── */
+.hs-tooltip {
+  position: absolute;
+  z-index: 2000;
+  pointer-events: none;
+  max-width: 252px;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 13px 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.hs-tt-name { font-size: 13px; font-weight: 700; margin-bottom: 5px; letter-spacing: -0.01em; }
+
+.hs-tt-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.hs-tt-badge--high   { background: rgba(220,38,38,0.15);  color: #F87171; border: 1px solid rgba(220,38,38,0.35); }
+.hs-tt-badge--medium { background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.35); }
+.hs-tt-badge--low    { background: rgba(250,204,21,0.12); color: #FDE047; border: 1px solid rgba(250,204,21,0.28); }
+.hs-tt-badge--other  { background: rgba(122,139,160,0.15); color: #A5B4C6; border: 1px solid rgba(122,139,160,0.3); }
+
+.hs-tt-table { width: 100%; border-collapse: collapse; margin-bottom: 9px; }
+.hs-tt-table td { padding: 2px 0; font-size: 11px; line-height: 1.6; }
+.hs-tt-table td:first-child { color: var(--muted); white-space: nowrap; padding-right: 10px; }
+.hs-tt-table td:last-child  { text-align: right; font-weight: 600; }
+
+.hs-tt-coord { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ─── Loading overlay ────────────────────────────────────────────── */
+.hs-loading {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 3000;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 24px;
+}
+
+.hs-loading-dots { display: flex; gap: 6px; }
+.hs-loading-dots span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: hsPulse 1.2s ease-in-out infinite;
+}
+.hs-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.hs-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes hsPulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.7); }
+  50%       { opacity: 1;   transform: scale(1); }
+}
+
+/* ─── Leaflet overrides ──────────────────────────────────────────── */
+.leaflet-container { background: var(--bg) !important; }
+.leaflet-attribution-flag { display: none !important; }
+.leaflet-interactive { cursor: crosshair; }
+
+/* ─── Mobile ─────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .hs-sidebar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    transform: translateX(-100%);
+    z-index: 1002;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
+  .hs-sidebar.open { transform: translateX(0); }
+  .hs-menu-btn { display: flex; }
+  .hs-count-badge { top: 14px; right: 10px; font-size: 10px; padding: 5px 10px; }
+}
