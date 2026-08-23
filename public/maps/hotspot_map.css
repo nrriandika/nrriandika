@@ -138,7 +138,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 .hs-dist-empty { font-size: 11px; color: var(--muted); }
 
 /* ─── Stats ──────────────────────────────────────────────────────── */
-.hs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.hs-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
 
 .hs-stat {
   background: var(--surface2);
@@ -149,6 +149,34 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); font-family:
 }
 .hs-stat-val { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
 .hs-stat-key { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ─── Freshness line ─────────────────────────────────────────────── */
+.hs-fresh { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.hs-fresh-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green, #22C55E); flex-shrink: 0; }
+.hs-fresh-dot--stale { background: #F59E0B; }
+
+/* ─── Legenda ukuran FRP ─────────────────────────────────────────── */
+.hs-frp-legend { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; padding: 2px 4px; }
+.hs-frp-item { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+.hs-frp-circle { border-radius: 50%; background: rgba(220,38,38,0.55); border: 1px solid rgba(255,255,255,0.35); }
+.hs-frp-cap { font-size: 9px; color: var(--muted); white-space: nowrap; }
+
+/* ─── Titik terpanas ────────────────────────────────────────────── */
+.hs-hot { display: flex; flex-direction: column; gap: 2px; }
+
+.hs-hot-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 7px;
+  cursor: pointer; border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left; width: 100%;
+  background: none; color: inherit; font: inherit;
+}
+.hs-hot-row:hover { background: var(--surface2); border-color: var(--border); }
+.hs-hot-row:focus-visible { outline: 2px solid rgba(245,166,35,0.5); outline-offset: 1px; }
+.hs-hot-rank { font-size: 10px; color: var(--muted); min-width: 12px; font-variant-numeric: tabular-nums; }
+.hs-hot-place { flex: 1; min-width: 0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hs-hot-frp { font-size: 11px; font-weight: 600; color: #F87171; font-variant-numeric: tabular-nums; }
 
 /* ─── Footer note ────────────────────────────────────────────────── */
 .hs-footer-note {

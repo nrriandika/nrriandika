@@ -25,7 +25,8 @@
             nrriandika
           </a>
           <h1 class="hs-title">Hotspot Monitoring</h1>
-          <p class="hs-subtitle" id="hs-subtitle">Indonesia · titik panas kebakaran</p>
+          <p class="hs-subtitle" id="hs-subtitle">Indonesia · NASA FIRMS</p>
+          <p class="hs-fresh" id="hs-fresh"></p>
         </div>
 
         <!-- Filter: Source -->
@@ -41,10 +42,34 @@
           <div class="hs-hint">Default hanya <b>High</b>. Klik level lain untuk menampilkannya.</div>
         </div>
 
+        <!-- Filter: Satelit -->
+        <div class="hs-section">
+          <div class="hs-label">Satelit / Instrumen</div>
+          <div class="hs-filters" id="hs-sat"></div>
+        </div>
+
+        <!-- Filter: Siang / Malam -->
+        <div class="hs-section">
+          <div class="hs-label">Waktu Perekaman</div>
+          <div class="hs-filters" id="hs-dn"></div>
+        </div>
+
         <!-- Filter: Periode -->
         <div class="hs-section">
           <div class="hs-label">Periode</div>
           <div class="hs-periods" id="hs-period"></div>
+        </div>
+
+        <!-- Legenda ukuran titik -->
+        <div class="hs-section">
+          <div class="hs-label">Ukuran Titik = Intensitas (FRP)</div>
+          <div class="hs-frp-legend" id="hs-frp-legend"></div>
+        </div>
+
+        <!-- Titik terpanas -->
+        <div class="hs-section">
+          <div class="hs-label">Titik Terpanas</div>
+          <div class="hs-hot" id="hs-hot"></div>
         </div>
 
         <!-- Distribution -->
@@ -61,8 +86,8 @@
 
         <!-- Footer -->
         <div class="hs-footer-note">
-          <p>Titik panas diplot dari koordinat satelit; satu titik bukan berarti satu kebakaran terkonfirmasi.</p>
-          <p id="hs-foot-meta">Sumber: tabel <code>hotspot_point</code>.</p>
+          <p>FRP (Fire Radiative Power) mengukur daya pancar termal titik api. Satu titik adalah satu piksel deteksi satelit, bukan satu kebakaran terkonfirmasi.</p>
+          <p id="hs-foot-meta">Sumber: NASA FIRMS via tabel <code>firms_hotspot_wib</code>. Semua waktu dalam WIB.</p>
         </div>
 
       </div>

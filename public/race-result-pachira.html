@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race Result — Pachira Eizza Paramitha · Half Marathon</title>
+<meta name="description" content="A celebration page for Pachira Eizza Paramitha finishing the Half Marathon at Maybank Marathon 2026 — 2:33:43, 7:17/km, a new personal best.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Runner data lives in the DATA block of the script below */
+
+:root{
+  --cream:#FFFBF5;
+  --blush:#FDEEE6;
+  --paper:#FFFFFF;
+  --rose:#C75B77;
+  --rose-soft:#E890A6;
+  --gold:#C08A2E;
+  --gold-soft:#E8C46A;
+  --leaf:#7C9B78;
+  --ink:#2B2320;
+  --muted:#8A7A70;
+  --line:rgba(43,35,32,.10);
+  --shadow:0 24px 60px -30px rgba(90,60,45,.45);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(1000px 620px at 12% -8%, #FFE9DC 0%, transparent 62%),
+    radial-gradient(880px 560px at 92% 6%, #FDE7EE 0%, transparent 58%),
+    radial-gradient(760px 640px at 50% 108%, #F6EFE0 0%, transparent 62%),
+    var(--cream);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Falling flower petals */
+#petals{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.petal-fall{position:absolute;top:-12vh;animation:fall linear infinite}
+.petal-sway{animation:sway ease-in-out infinite alternate}
+.petal{
+  border-radius:62% 4% 62% 4%;
+  animation:spin linear infinite;
+  box-shadow:inset 0 0 6px rgba(255,255,255,.6);
+}
+@keyframes fall{to{transform:translateY(118vh)}}
+@keyframes sway{from{transform:translateX(-26px)}to{transform:translateX(26px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Layout */
+main{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:44px 20px 72px}
+
+.event{text-align:center;margin-bottom:26px}
+.event-mark{font-size:30px;line-height:1;animation:bob 4.5s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-7px) rotate(6deg)}}
+.event-name{
+  margin-top:10px;font-weight:700;font-size:13px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--gold);
+}
+.event-sub{margin-top:7px;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.event-rule{
+  width:64px;height:1px;margin:16px auto 0;
+  background:linear-gradient(90deg,transparent,var(--gold-soft),transparent);
+}
+
+.card{
+  position:relative;
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:22px;
+  box-shadow:var(--shadow);
+  padding:34px 28px;
+  margin-bottom:20px;
+}
+.card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:4px;
+  border-radius:22px 22px 0 0;
+  background:linear-gradient(90deg,var(--rose-soft),var(--gold-soft),var(--leaf),var(--rose-soft));
+}
+
+/* Result card */
+.ribbon{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--rose),#A8425F);
+  color:#fff;font-size:11px;font-weight:800;letter-spacing:.22em;
+  padding:7px 20px;border-radius:99px;white-space:nowrap;
+  box-shadow:0 8px 20px -8px rgba(167,66,95,.7);
+}
+.result{padding-top:44px;text-align:center}
+.kicker{font-size:11.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.runner{
+  font-family:'Playfair Display',Georgia,serif;
+  font-weight:700;font-size:clamp(30px,7.4vw,46px);
+  line-height:1.12;letter-spacing:-.01em;margin:12px 0 4px;
+}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.chip{
+  font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:7px 13px;border-radius:99px;border:1px solid var(--line);
+  background:var(--blush);color:#8A5240;
+}
+.chip.leafy{background:#F0F5EE;color:#4E6B4A}
+
+.medal{margin:26px auto 4px;width:112px;height:112px;position:relative}
+.medal svg{width:100%;height:100%;display:block;filter:drop-shadow(0 12px 22px rgba(150,110,40,.35))}
+.medal::after{
+  content:"";position:absolute;inset:-18px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,196,106,.35),transparent 68%);
+  animation:pulse 3.4s ease-in-out infinite;z-index:-1;
+}
+@keyframes pulse{0%,100%{transform:scale(.9);opacity:.55}50%{transform:scale(1.08);opacity:1}}
+
+.time-label{display:block;margin-top:18px;font-size:11.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.time{
+  font-size:clamp(48px,14vw,86px);font-weight:800;line-height:1;
+  letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  margin-top:8px;
+  background:linear-gradient(160deg,#3A2C26 12%,var(--gold) 58%,#A8425F 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.time-note{margin-top:10px;font-size:12.5px;color:var(--muted)}
+
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:28px;text-align:left}
+.stat{
+  border:1px solid var(--line);border-radius:15px;padding:15px 16px;
+  background:linear-gradient(180deg,#FFFDFA,#FFF7F0);
+}
+.stat-k{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.stat-v{margin-top:6px;font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat-v small{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
+
+/* Section heading */
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px}
+.sec-title{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700}
+.sec-count{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--rose);white-space:nowrap}
+.sec-sub{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.6}
+
+/* Course track */
+.track{position:relative;margin:30px 0 8px;height:10px;border-radius:99px;background:#F2E9DF}
+.track-fill{
+  height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--rose-soft),var(--gold-soft),var(--leaf));
+  transition:width 2.4s cubic-bezier(.22,.9,.24,1);
+}
+.runner-dot{
+  position:absolute;top:50%;left:0;transform:translate(-50%,-50%);
+  font-size:22px;transition:left 2.4s cubic-bezier(.22,.9,.24,1);
+}
+.track-marks{display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:var(--muted);font-weight:600}
+
+/* Per-kilometer pace chart */
+.chart-wrap{position:relative;height:158px;margin-top:30px}
+.chart{display:flex;align-items:flex-end;gap:3px;height:100%}
+.bar{
+  position:relative;flex:1;height:100%;display:flex;align-items:flex-end;
+  border-radius:6px 6px 4px 4px;cursor:default;
+}
+.bar:hover,.bar:focus-visible{background:rgba(199,91,119,.07);outline:none}
+.bar-fill{
+  width:100%;height:0;border-radius:6px 6px 4px 4px;
+  background:linear-gradient(180deg,var(--c1),var(--c2));
+  transition:height .85s cubic-bezier(.2,.85,.3,1);transition-delay:var(--d);
+}
+.bar.best .bar-fill{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--rose)}
+.tip{
+  position:absolute;bottom:calc(100% + 9px);left:50%;
+  transform:translateX(-50%) translateY(4px);
+  background:var(--ink);color:#fff;font-size:11px;font-weight:600;white-space:nowrap;
+  padding:6px 9px;border-radius:8px;opacity:0;pointer-events:none;
+  transition:opacity .16s ease,transform .16s ease;z-index:5;
+}
+.tip::after{
+  content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--ink);
+}
+.bar:hover .tip,.bar:focus-visible .tip{opacity:1;transform:translateX(-50%) translateY(0)}
+.avg{
+  position:absolute;left:0;right:0;bottom:var(--avg,50%);
+  border-top:1px dashed rgba(43,35,32,.3);pointer-events:none;
+}
+.avg span{
+  position:absolute;right:0;bottom:4px;font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  background:rgba(255,255,255,.85);padding:1px 5px;border-radius:5px;
+}
+.chart-x{display:flex;justify-content:space-between;margin-top:10px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.chart-legend{margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.6}
+
+/* Segment table */
+table{width:100%;border-collapse:collapse;margin-top:24px;font-variant-numeric:tabular-nums}
+th{
+  text-align:left;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;padding:0 0 10px;border-bottom:1px solid var(--line);
+}
+th:last-child,td:last-child{text-align:right}
+td{padding:13px 0;border-bottom:1px solid var(--line);font-size:15px;font-weight:500}
+tr.row{opacity:0;transform:translateY(8px)}
+tr.row.in{animation:rowIn .55s cubic-bezier(.2,.8,.25,1) forwards}
+@keyframes rowIn{to{opacity:1;transform:none}}
+tr.fast td{color:var(--rose)}
+tr.fin td{font-weight:800}
+
+.disclaimer{margin-top:16px;font-size:11.5px;color:var(--muted);line-height:1.65}
+
+/* Message card */
+.note{text-align:center;padding-top:40px;padding-bottom:38px}
+.bloom-row{display:flex;justify-content:center;gap:10px;margin-bottom:22px}
+.bloom{width:38px;height:38px;transform:scale(0) rotate(-40deg);opacity:0}
+.bloom.in{animation:bloom .8s cubic-bezier(.2,1.1,.3,1) forwards}
+.bloom:nth-child(2){animation-delay:.12s}
+.bloom:nth-child(3){animation-delay:.24s}
+.bloom:nth-child(4){animation-delay:.36s}
+.bloom:nth-child(5){animation-delay:.48s}
+@keyframes bloom{to{transform:scale(1) rotate(0);opacity:1}}
+.bloom svg{width:100%;height:100%;animation:sway2 6s ease-in-out infinite alternate}
+@keyframes sway2{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+
+.note p{font-size:15.5px;line-height:1.85;color:#4A3D36;max-width:52ch;margin:0 auto 16px}
+.note .lead{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:clamp(21px,5vw,27px);line-height:1.35;color:var(--ink);
+  font-weight:700;margin-bottom:20px;
+}
+.sign{margin-top:24px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:26px 0 10px}
+.btn{
+  font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  padding:14px 24px;border-radius:99px;border:1px solid transparent;
+  background:linear-gradient(135deg,var(--rose),#A8425F);color:#fff;
+  box-shadow:0 12px 28px -14px rgba(167,66,95,.85);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 18px 34px -14px rgba(167,66,95,.9)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line);box-shadow:none}
+.btn.ghost:hover{background:var(--blush)}
+
+footer{text-align:center;margin-top:26px;font-size:11.5px;color:var(--muted);line-height:1.8}
+
+/* Petal burst on button press */
+.burst{position:fixed;z-index:3;pointer-events:none;border-radius:62% 4% 62% 4%;animation:burst 1.9s cubic-bezier(.15,.65,.3,1) forwards}
+@keyframes burst{
+  0%{transform:translate(0,0) scale(.3) rotate(0);opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) scale(1) rotate(var(--rot));opacity:0}
+}
+
+@media (min-width:620px){
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .card{padding:38px 34px}
+  .result{padding-top:50px}
+  .chart-wrap{height:186px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  #petals{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="petals" aria-hidden="true"></div>
+
+<main>
+  <header class="event">
+    <div class="event-mark">&#127802;</div>
+    <div class="event-name">Maybank Marathon 2026</div>
+    <div class="event-sub">Half Marathon &middot; 21.0975 KM</div>
+    <div class="event-rule"></div>
+  </header>
+
+  <!-- Result card -->
+  <section class="card result">
+    <div class="ribbon">FINISHER</div>
+    <p class="kicker">Race Result</p>
+    <h1 class="runner">Pachira Eizza Paramitha</h1>
+    <div class="chips">
+      <span class="chip">Half Marathon</span>
+      <span class="chip">21.0975 KM</span>
+      <span class="chip leafy">Personal Best &#127937;</span>
+    </div>
+
+    <div class="medal">
+      <svg viewBox="0 0 120 120" role="img" aria-label="Half marathon finisher medal">
+        <defs>
+          <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#F6DF9B"/>
+            <stop offset="45%" stop-color="#D9A93F"/>
+            <stop offset="100%" stop-color="#A87A20"/>
+          </linearGradient>
+          <linearGradient id="g-rib" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E890A6"/>
+            <stop offset="100%" stop-color="#C75B77"/>
+          </linearGradient>
+        </defs>
+        <path d="M38 4 L54 44 L44 50 L26 12 Z" fill="url(#g-rib)"/>
+        <path d="M82 4 L66 44 L76 50 L94 12 Z" fill="url(#g-rib)" opacity=".85"/>
+        <circle cx="60" cy="76" r="38" fill="url(#g-gold)"/>
+        <circle cx="60" cy="76" r="31" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.5"/>
+        <text x="60" y="72" text-anchor="middle" font-family="Inter,sans-serif" font-size="19" font-weight="800" fill="#4A3405">21.1</text>
+        <text x="60" y="88" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" font-weight="700" letter-spacing="1.6" fill="#5C4310">KM</text>
+      </svg>
+    </div>
+
+    <span class="time-label">Finish Time</span>
+    <div class="time" id="time">0:00:00</div>
+    <p class="time-note">A new personal best &mdash; 12 minutes 37 seconds faster than her previous half marathon.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-k">Avg Pace</div>
+        <div class="stat-v">7:17 <small>/km</small></div>
+      </div>
+      <div class="stat">
+        <div class="stat-k">Fastest KM</div>
+        <div class="stat-v">6:03 <small>/km</small></div>
+      </div>
+      <div class="stat">
+        <div class="stat-k">Distance</div>
+        <div class="stat-v">21.10 <small>km</small></div>
+      </div>
+      <div class="stat">
+        <div class="stat-k">New PRs</div>
+        <div class="stat-v" style="color:var(--rose)">7</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Splits -->
+  <section class="card" id="splits">
+    <div class="sec-head">
+      <h2 class="sec-title">The 21-Kilometer Story</h2>
+      <span class="sec-count">estimated</span>
+    </div>
+    <p class="sec-sub">Opened at 6:03, hit the wall between kilometer 6 and 10, then fought back and closed it out with something still left in the tank.</p>
+
+    <div class="track">
+      <div class="track-fill" id="fill"></div>
+      <div class="runner-dot" id="dot">&#127939;&#8205;&#9792;&#65039;</div>
+    </div>
+    <div class="track-marks"><span>START</span><span>5K</span><span>10K</span><span>15K</span><span>FINISH</span></div>
+
+    <div class="chart-wrap">
+      <div class="avg" id="avg"><span>average 7:17</span></div>
+      <div class="chart" id="chart"></div>
+    </div>
+    <div class="chart-x"><span>KM 1</span><span>KM 5</span><span>KM 10</span><span>KM 15</span><span>KM 21</span></div>
+    <p class="chart-legend">Taller bar means a faster kilometer. Hover a bar to see its pace.</p>
+
+    <table>
+      <thead>
+        <tr><th>Segment</th><th>Pace</th><th>Time</th></tr>
+      </thead>
+      <tbody id="split-body"></tbody>
+    </table>
+
+    <p class="disclaimer">
+      <!-- The 5 K segment splits are taken straight from her Best Effort records, so those figures are exact.
+      The per-kilometer pace behind the chart is an <strong>estimate</strong>, reconstructed from her 11 Best Effort
+      records (400 m through the half marathon) rather than per-kilometer GPS data. Sanity check: hide the 10-mile
+      record and predict it from the rest and you get 1:55:13 against an actual 1:55:06 &mdash; seven seconds apart. -->
+    </p>
+  </section>
+
+  <!-- Message -->
+  <section class="card note" id="note">
+    <div class="bloom-row" id="blooms"></div>
+    <p class="lead">Congratulations on finishing the Half Marathon!</p>
+    <p>21.1 km successfully surveyed from start to finish, with every kilometer accurately recorded and every elevation change personally verified in the field. No need for geospatial analysis, your legs have already collected all the ground-truth data. But jokes aside, it&rsquo;s genuinely amazing to see you keep challenging yourself and putting in the work, as you always do. You should be proud of how far you&rsquo;ve come, and I&rsquo;m definitely proud to see you keep going and doing what you love.</p>
+    <p>May your GPS track stay clean, your elevation profile be merciful, and your final coordinates always lead you to a well-deserved finish line. &#128506;&#65039;&#129351;</p>
+    <div class="sign">&mdash; proudly cheering from the sidelines</div>
+
+    <div class="actions">
+      <button class="btn" id="throw">&#127800; Throw Flowers</button>
+      <button class="btn ghost" id="replay">&#8635; Replay</button>
+    </div>
+  </section>
+
+  <footer>
+    An unofficial celebration page dedicated to Pachira Eizza Paramitha.<br>
+    Not an official Maybank Marathon result page, just a little something to celebrate someone who deserves to be celebrated. 🗺️🏃‍♀️
+  </footer>
+</main>
+
+<script>
+/* ── DATA ──────────────────────────────────────────────────── */
+const CONFIG = {
+  finishSeconds: 2 * 3600 + 33 * 60 + 43,   // 2:33:43
+  distanceKm: 21.0975,
+};
+
+/* Estimated pace per kilometer (seconds/km), reconstructed from her Best Efforts.
+   The 21st bar represents the final 1.0975 km. */
+const PER_KM = [363, 392, 384, 408, 415, 465, 465, 465, 465, 465,
+                424, 424, 424, 424, 424, 454, 462, 463, 463, 463, 463];
+
+/* Segment splits — computed directly from the Best Effort records */
+const SEGMENTS = [
+  { label: '0 – 5 K',       pace: '6:32', time: '32:42', fast: true },
+  { label: '5 – 10 K',      pace: '7:45', time: '38:46' },
+  { label: '10 – 15 K',     pace: '7:04', time: '35:21', fast: true },
+  { label: '15 – 20 K',     pace: '7:41', time: '38:26' },
+  { label: '20 K – finish', pace: '7:43', time: '8:28', fin: true },
+];
+
+/* ── Utilities ─────────────────────────────────────────────── */
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pad = n => String(n).padStart(2, '0');
+const hms = s => { s = Math.round(s); return Math.floor(s / 3600) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60); };
+const mmss = s => { s = Math.round(s); return Math.floor(s / 60) + ':' + pad(s % 60); };
+const rand = (a, b) => a + Math.random() * (b - a);
+
+/* ── Falling petals ────────────────────────────────────────── */
+const COLORS = [
+  'linear-gradient(135deg,#FFFFFF,#FFF0D6)',   /* frangipani */
+  'linear-gradient(135deg,#FBD3E0,#E8809A)',   /* bougainvillea */
+  'linear-gradient(135deg,#FFE7C2,#E8C46A)',   /* gold */
+  'linear-gradient(135deg,#FFD9E4,#C75B77)',
+  'linear-gradient(135deg,#F1F7EE,#BFD8B8)',   /* leaf */
+];
+
+function makePetal(container) {
+  const fall = document.createElement('div');
+  fall.className = 'petal-fall';
+  fall.style.left = rand(-4, 100) + 'vw';
+  fall.style.animationDuration = rand(9, 19) + 's';
+  fall.style.animationDelay = -rand(0, 19) + 's';
+
+  const sway = document.createElement('div');
+  sway.className = 'petal-sway';
+  sway.style.animationDuration = rand(2.4, 5.2) + 's';
+
+  const petal = document.createElement('div');
+  const size = rand(9, 20);
+  petal.className = 'petal';
+  petal.style.width = size + 'px';
+  petal.style.height = size * rand(.72, 1.05) + 'px';
+  petal.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+  petal.style.animationDuration = rand(3, 8) + 's';
+  petal.style.opacity = rand(.5, .95);
+
+  sway.appendChild(petal);
+  fall.appendChild(sway);
+  container.appendChild(fall);
+}
+if (!reduced) {
+  const box = document.getElementById('petals');
+  const count = window.innerWidth < 600 ? 24 : 42;
+  for (let i = 0; i < count; i++) makePetal(box);
+}
+
+/* ── Blooming flowers ──────────────────────────────────────── */
+function flowerSVG(petalColor, coreColor) {
+  const petals = [0, 72, 144, 216, 288].map(a =>
+    '<ellipse cx="50" cy="27" rx="14" ry="21" transform="rotate(' + a + ' 50 50)" fill="' + petalColor + '"/>'
+  ).join('');
+  return '<svg viewBox="0 0 100 100" aria-hidden="true">' + petals +
+    '<circle cx="50" cy="50" r="10" fill="' + coreColor + '"/></svg>';
+}
+const PALETTE = [
+  ['#FFF6E4', '#E8C46A'],
+  ['#F8C6D6', '#C75B77'],
+  ['#FFE4C9', '#D9A93F'],
+  ['#EFD9E8', '#A8639C'],
+  ['#FFFFFF', '#E8A0B4'],
+];
+const bloomRow = document.getElementById('blooms');
+PALETTE.forEach(pair => {
+  const d = document.createElement('div');
+  d.className = 'bloom';
+  d.innerHTML = flowerSVG(pair[0], pair[1]);
+  bloomRow.appendChild(d);
+});
+
+/* ── Per-kilometer pace chart ──────────────────────────────── */
+const avgPace = CONFIG.finishSeconds / CONFIG.distanceKm;
+const fastest = Math.min.apply(null, PER_KM);
+const slowest = Math.max.apply(null, PER_KM);
+
+/* bar height follows speed: the faster the kilometer, the taller the bar */
+function heightPct(pace) {
+  const s = 1 / pace, sMin = 1 / slowest, sMax = 1 / fastest;
+  return 34 + 66 * (s - sMin) / (sMax - sMin);
+}
+/* colour: rose for the fast kilometers, gold for the slow ones */
+const C_FAST = [[232, 144, 166], [199, 91, 119]];
+const C_SLOW = [[232, 196, 106], [192, 138, 46]];
+function colorAt(t, i) {
+  const a = C_SLOW[i], b = C_FAST[i];
+  return 'rgb(' + a.map((v, k) => Math.round(v + (b[k] - v) * t)).join(',') + ')';
+}
+
+const chart = document.getElementById('chart');
+PER_KM.forEach((pace, i) => {
+  const t = (1 / pace - 1 / slowest) / (1 / fastest - 1 / slowest);
+  const last = i === PER_KM.length - 1;
+  const name = last ? 'KM 21 (final 1.0975 km)' : 'KM ' + (i + 1);
+
+  const bar = document.createElement('div');
+  bar.className = 'bar' + (pace === fastest ? ' best' : '');
+  bar.tabIndex = 0;
+  bar.setAttribute('aria-label', name + ', pace ' + mmss(pace) + ' per kilometer');
+
+  const fill = document.createElement('div');
+  fill.className = 'bar-fill';
+  fill.style.setProperty('--c1', colorAt(t, 0));
+  fill.style.setProperty('--c2', colorAt(t, 1));
+  fill.style.setProperty('--d', (i * 0.045) + 's');
+  fill.dataset.h = heightPct(pace) + '%';
+
+  const tip = document.createElement('div');
+  tip.className = 'tip';
+  tip.textContent = name + ' · ' + mmss(pace) + '/km';
+
+  bar.appendChild(tip);
+  bar.appendChild(fill);
+  chart.appendChild(bar);
+});
+document.getElementById('avg').style.setProperty('--avg', heightPct(avgPace) + '%');
+
+/* ── Segment table ─────────────────────────────────────────── */
+const body = document.getElementById('split-body');
+SEGMENTS.forEach((s, i) => {
+  const tr = document.createElement('tr');
+  tr.className = 'row' + (s.fast ? ' fast' : '') + (s.fin ? ' fin' : '');
+  tr.style.animationDelay = (i * 0.14) + 's';
+  tr.innerHTML = '<td>' + s.label + '</td><td>' + s.pace + '/km</td><td>' + s.time + '</td>';
+  body.appendChild(tr);
+});
+
+/* ── Animation ─────────────────────────────────────────────── */
+const timeEl = document.getElementById('time');
+const fillEl = document.getElementById('fill');
+const dotEl = document.getElementById('dot');
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+function runCountUp() {
+  if (reduced) { timeEl.textContent = hms(CONFIG.finishSeconds); return; }
+  const dur = 2400;
+  const t0 = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    timeEl.textContent = hms(CONFIG.finishSeconds * easeOut(p));
+    if (p < 1) requestAnimationFrame(tick);
+    else timeEl.textContent = hms(CONFIG.finishSeconds);
+  }
+  requestAnimationFrame(tick);
+}
+function runTrack() { fillEl.style.width = '100%'; dotEl.style.left = '100%'; }
+function resetTrack() { fillEl.style.width = '0'; dotEl.style.left = '0'; }
+function growBars() { chart.querySelectorAll('.bar-fill').forEach(f => { f.style.height = f.dataset.h; }); }
+function resetBars() { chart.querySelectorAll('.bar-fill').forEach(f => { f.style.height = '0'; }); }
+
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    if (e.target.id === 'splits') {
+      runTrack();
+      growBars();
+      body.querySelectorAll('tr').forEach(r => r.classList.add('in'));
+    }
+    if (e.target.id === 'note') {
+      bloomRow.querySelectorAll('.bloom').forEach(b => b.classList.add('in'));
+    }
+    io.unobserve(e.target);
+  });
+}, { threshold: .25 });
+io.observe(document.getElementById('splits'));
+io.observe(document.getElementById('note'));
+
+/* ── Petal burst ───────────────────────────────────────────── */
+function burst(x, y, n) {
+  n = n || 40;
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'burst';
+    const size = rand(8, 18);
+    const ang = rand(0, Math.PI * 2);
+    const dist = rand(80, 340);
+    p.style.width = size + 'px';
+    p.style.height = size * rand(.7, 1.05) + 'px';
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+    p.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+    p.style.setProperty('--dy', (Math.sin(ang) * dist + rand(60, 220)) + 'px');
+    p.style.setProperty('--rot', rand(-540, 540) + 'deg');
+    p.style.animationDelay = rand(0, .25) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2400);
+  }
+}
+document.getElementById('throw').addEventListener('click', e => {
+  const r = e.currentTarget.getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height / 2);
+});
+document.getElementById('replay').addEventListener('click', () => {
+  resetTrack();
+  resetBars();
+  body.querySelectorAll('tr').forEach(r => { r.classList.remove('in'); void r.offsetWidth; });
+  bloomRow.querySelectorAll('.bloom').forEach(b => { b.classList.remove('in'); void b.offsetWidth; });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => {
+    runCountUp();
+    runTrack();
+    growBars();
+    body.querySelectorAll('tr').forEach(r => r.classList.add('in'));
+    bloomRow.querySelectorAll('.bloom').forEach(b => b.classList.add('in'));
+  }, 500);
+});
+
+window.addEventListener('load', () => {
+  runCountUp();
+  if (!reduced) setTimeout(() => burst(window.innerWidth / 2, window.innerHeight * .3, 34), 1900);
+});
+</script>
+</body>
+</html>

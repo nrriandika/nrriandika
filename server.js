@@ -1044,6 +1044,11 @@ app.get(['/wc26_predictor', '/wc26_predictor/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'wc26_predictor.html'));
 });
 
+// Halaman perayaan Half Marathon — Pachira Eizza Paramitha
+app.get(['/pachira', '/pachira/', '/race-result/pachira', '/race-result/pachira/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'race-result-pachira.html'));
+});
+
 // ─── Maps ─────────────────────────────────────────────────────
 // Legacy redirects /map/* → /maps/*
 app.get(['/map', '/map/'], (_req, res) => res.redirect(301, '/maps/pocong'));
@@ -1087,21 +1092,29 @@ app.get('/api/kerentanan/data', async (_req, res) => {
   res.json(data || []);
 });
 
-/** GET /api/hotspot/data — titik panas (paginasi, PostgREST dibatasi 1000/req) */
+/** GET /api/hotspot/data — titik panas NASA FIRMS (waktu WIB), paginasi 1000/req */
 app.get('/api/hotspot/data', async (_req, res) => {
   if (!supabase) return res.json([]);
 
-  const COLS      = 'latitude,longitude,confidence_level,source,date,province,regency,satellite';
-  const PAGE      = 1000;
-  const MAX_ROWS  = 20000;
-  const out       = [];
+  const COLS = [
+    'id', 'latitude', 'longitude', 'province', 'regency',
+    'acq_date_wib', 'acq_datetime_wib',
+    'satellite', 'instrument', 'source', 'product',
+    'confidence_raw', 'confidence_level',
+    'brightness_k', 'frp_mw', 'daynight', 'scan_km', 'track_km',
+    'fetched_at_utc',
+  ].join(',');
+
+  const PAGE     = 1000;
+  const MAX_ROWS = 20000;
+  const out      = [];
 
   try {
     for (let from = 0; from < MAX_ROWS; from += PAGE) {
       const { data, error } = await supabase
-        .from('hotspot_point')
+        .from('firms_hotspot_wib')
         .select(COLS)
-        .order('date', { ascending: false, nullsFirst: false })
+        .order('acq_datetime_wib', { ascending: false, nullsFirst: false })
         .range(from, from + PAGE - 1);
       if (error) return res.status(500).json({ error: error.message });
       if (!data || !data.length) break;
