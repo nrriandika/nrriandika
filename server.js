@@ -1039,6 +1039,75 @@ app.get(['/tools/meme-generator', '/tools/meme-generator/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'meme-generator.html'));
 });
 
+// Album Collage sub-page
+app.get(['/tools/album-collage', '/tools/album-collage/'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'album-collage.html'));
+});
+
+/**
+ * GET /api/album-search?q= — cari album di Deezer + iTunes (keduanya tanpa key).
+ * Katalog iTunes bolong untuk banyak rilisan lama, jadi Deezer jadi sumber utama
+ * dan iTunes pelengkap. Cover kedua CDN mengirim CORS `*` → aman untuk canvas export.
+ */
+async function deezerAlbumSearch(q) {
+  const { data } = await axios.get('https://api.deezer.com/search/album', {
+    params: { q, limit: 24 },
+    timeout: 8000,
+  });
+  return (data.data || [])
+    .filter(r => r.id && r.cover_big)
+    .map(r => ({
+      id:     `dz-${r.id}`,
+      title:  r.title,
+      artist: r.artist?.name || '',
+      year:   '',
+      cover:  r.cover_big,
+      thumb:  r.cover_medium,
+    }));
+}
+
+async function itunesAlbumSearch(q) {
+  const { data } = await axios.get('https://itunes.apple.com/search', {
+    params: { term: q, entity: 'album', media: 'music', limit: 24 },
+    timeout: 8000,
+  });
+  return (data.results || [])
+    .filter(r => r.collectionId && r.artworkUrl100)
+    .map(r => ({
+      id:     `it-${r.collectionId}`,
+      title:  r.collectionName,
+      artist: r.artistName,
+      year:   r.releaseDate ? r.releaseDate.slice(0, 4) : '',
+      cover:  r.artworkUrl100.replace('100x100bb', '600x600bb'),
+      thumb:  r.artworkUrl100,
+    }));
+}
+
+app.get('/api/album-search', async (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 100);
+  if (q.length < 2) return res.json([]);
+
+  const sources = await Promise.allSettled([deezerAlbumSearch(q), itunesAlbumSearch(q)]);
+  const failed = sources.filter(s => s.status === 'rejected');
+  failed.forEach(s => console.error('Album search error:', s.reason?.message));
+  if (failed.length === sources.length) return res.status(502).json({ error: 'search_failed' });
+
+  // Gabung & buang duplikat (artist + judul yang sama); tahun dari iTunes dipinjam bila ada
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const byKey = new Map();
+  for (const album of sources.flatMap(s => (s.status === 'fulfilled' ? s.value : []))) {
+    const key = norm(album.artist) + '|' + norm(album.title);
+    const existing = byKey.get(key);
+    if (!existing) byKey.set(key, album);
+    else if (!existing.year && album.year) existing.year = album.year;
+  }
+
+  // Hasil kosong / sebagian (satu sumber gagal) jangan di-cache browser
+  const albums = [...byKey.values()].slice(0, 36);
+  res.set('Cache-Control', albums.length && !failed.length ? 'public, max-age=3600' : 'no-store');
+  res.json(albums);
+});
+
 // WC 2026 Predictor
 app.get(['/wc26_predictor', '/wc26_predictor/'], (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'wc26_predictor.html'));

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Album Collage — nrriandika</title>
+  <link rel="icon" href="/src/img/Favicon.ico" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/album-collage.css" />
+</head>
+<body class="page-tools">
+
+  <!-- ─── Space Background ──────────────────────────────────── -->
+  <div class="space-planet space-planet--1">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-planet space-planet--2">
+    <div class="planet-body"></div>
+    <div class="planet-ring"></div>
+  </div>
+  <div class="space-orbit space-orbit--1"></div>
+  <div class="space-orbit space-orbit--2"></div>
+  <div class="space-orbit space-orbit--3"></div>
+
+  <!-- ─── Navigation ─────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <a class="nav-logo" href="/">
+      <span class="logo-dot"></span>
+      <span>nrriandika</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#work" class="nav-link">Work</a></li>
+      <li><a href="/#game" class="nav-link">Game</a></li>
+      <li><a href="/#music" class="nav-link">Music</a></li>
+      <li><a href="/tools" class="nav-link nav-link--special active">Tools</a></li>
+    </ul>
+  </nav>
+
+  <!-- ─── Hero ───────────────────────────────────────────────── -->
+  <section class="br-hero">
+    <div class="container">
+      <a href="/tools" class="tools-back">
+        <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to tools
+      </a>
+
+      <div class="br-icon-wrap ac-icon-wrap">
+        <span class="br-icon">💿</span>
+      </div>
+
+      <h1 class="br-title">Album Collage</h1>
+      <p class="br-subtitle">Susun album favoritmu jadi satu kolase My Top Album.</p>
+    </div>
+  </section>
+
+  <!-- ─── Main Section ──────────────────────────────────────── -->
+  <section class="ac-section">
+    <div class="container">
+
+      <!-- Controls -->
+      <div class="ac-controls">
+        <div class="ac-control">
+          <span class="ac-label">Ukuran grid</span>
+          <div class="ac-presets" id="ac-presets">
+            <button type="button" class="ac-preset" data-size="3">3×3</button>
+            <button type="button" class="ac-preset" data-size="4">4×4</button>
+            <button type="button" class="ac-preset" data-size="5">5×5</button>
+          </div>
+        </div>
+
+        <div class="ac-control">
+          <span class="ac-label">Custom</span>
+          <div class="ac-custom">
+            <select id="ac-cols" aria-label="Kolom"></select>
+            <span class="ac-times">×</span>
+            <select id="ac-rows" aria-label="Baris"></select>
+          </div>
+        </div>
+
+        <div class="ac-control">
+          <label class="ac-label" for="ac-name">Nama (opsional)</label>
+          <input class="ac-name" id="ac-name" type="text" maxlength="30" placeholder="mis. nrriandika" autocomplete="off" />
+        </div>
+
+        <div class="ac-control">
+          <span class="ac-label">Opsi</span>
+          <label class="ac-toggle">
+            <input type="checkbox" id="ac-show-captions" checked />
+            <span>Artis &amp; judul di bawah cover</span>
+          </label>
+        </div>
+
+        <div class="ac-actions">
+          <button type="button" class="btn btn-ghost btn-sm" id="ac-clear">Kosongkan</button>
+          <button type="button" class="btn btn-primary btn-sm" id="ac-download">
+            <svg viewBox="0 0 16 16" fill="none" width="14"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download PNG
+          </button>
+        </div>
+      </div>
+
+      <!-- Collage -->
+      <div class="ac-board" id="ac-board">
+        <div class="ac-title-wrap">
+          <input class="ac-title" id="ac-title" type="text" maxlength="60" spellcheck="false" aria-label="Judul kolase" />
+          <span class="ac-title-rule"></span>
+          <span class="ac-subtitle" id="ac-subtitle"></span>
+        </div>
+        <div class="ac-grid" id="ac-grid"></div>
+      </div>
+      <p class="ac-hint">Klik kotak untuk memilih album · seret kotak untuk mengubah urutan · tersimpan otomatis di browser ini</p>
+    </div>
+  </section>
+
+  <!-- ─── Search Modal ──────────────────────────────────────── -->
+  <div class="ac-modal" id="ac-modal" hidden>
+    <div class="ac-modal-backdrop" data-close></div>
+    <div class="ac-modal-panel" role="dialog" aria-modal="true" aria-labelledby="ac-modal-title">
+      <div class="ac-modal-head">
+        <h2 id="ac-modal-title">Pilih album untuk <span id="ac-modal-slot">#1</span></h2>
+        <button type="button" class="ac-modal-close" data-close aria-label="Tutup">
+          <svg viewBox="0 0 16 16" fill="none" width="16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="ac-search">
+        <svg viewBox="0 0 16 16" fill="none" width="15"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input type="text" id="ac-search-input" placeholder="Cari judul album atau artis…" autocomplete="off" />
+      </div>
+      <div class="ac-results" id="ac-results"></div>
+      <div class="ac-modal-foot" id="ac-modal-foot" hidden>
+        <button type="button" class="btn btn-ghost btn-sm" id="ac-remove">Hapus album dari kotak ini</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Footer ───────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-name">nrriandika</span>
+      <span class="footer-sep">·</span>
+      <span class="footer-year" id="footer-year"></span>
+      <span class="footer-sep">·</span>
+      <span class="footer-made">Made with code &amp; curiosity</span>
+    </div>
+  </footer>
+
+  <script src="/album-collage.js"></script>
+  <script src="/visitor.js" defer></script>
+</body>
+</html>

@@ -30,6 +30,18 @@
       url: '/tools/meme-generator',
       status: 'live',
     },
+    {
+      id: 'album-collage',
+      name: 'Album Collage',
+      desc: 'Build your top albums grid — up to 5×5. Click a tile, search any album, drag to reorder, then download it as a PNG.',
+      category: 'web',
+      tags: ['Music', 'iTunes', 'Canvas'],
+      icon: '💿',
+      color1: '#7c63ff',
+      color2: '#22d3ee',
+      url: '/tools/album-collage',
+      status: 'live',
+    },
   ];
 
   // ─── DOM refs ─────────────────────────────────────────────────
