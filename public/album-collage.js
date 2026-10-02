@@ -15,6 +15,8 @@
   const colsSel    = document.getElementById('ac-cols');
   const rowsSel    = document.getElementById('ac-rows');
   const showCapsEl = document.getElementById('ac-show-captions');
+  const wordEl     = document.getElementById('ac-word');
+  const wordCountEl = document.getElementById('ac-word-count');
   const nameEl     = document.getElementById('ac-name');
   const subtitleEl = document.getElementById('ac-subtitle');
   const clearBtn   = document.getElementById('ac-clear');
@@ -32,7 +34,9 @@
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   const total = () => state.cols * state.rows;
-  const defaultTitle = () => `My Top ${total()} Albums`;
+  // "My Influential 25 Albums"; tanpa kata → "My 25 Albums"
+  const buildTitle = () =>
+    ['My', state.word.trim(), total(), total() === 1 ? 'Album' : 'Albums'].filter(Boolean).join(' ');
   // "NAMA · 2026" kalau nama diisi, "2026" saja kalau kosong
   const subtitle = () => [state.name.trim(), new Date().getFullYear()].filter(Boolean).join('  ·  ');
 
@@ -40,7 +44,7 @@
   const state = {
     cols: 3,
     rows: 3,
-    title: '',            // empty = use default title
+    word: 'Top',          // "My {word} {n} Albums"; empty = "My {n} Albums"
     name: '',             // optional, shown in subtitle
     showCaptions: true,
     albums: Array(MAX * MAX).fill(null),
@@ -52,7 +56,7 @@
       if (!saved) return;
       state.cols = clampSize(saved.cols);
       state.rows = clampSize(saved.rows);
-      state.title = typeof saved.title === 'string' ? saved.title : '';
+      if (typeof saved.word === 'string') state.word = saved.word;
       state.name = typeof saved.name === 'string' ? saved.name : '';
       state.showCaptions = saved.showCaptions !== false;
       if (Array.isArray(saved.albums)) {
@@ -94,8 +98,9 @@
         </div>`;
     }).join('');
 
-    if (document.activeElement !== titleEl) titleEl.value = state.title || defaultTitle();
-    titleEl.placeholder = defaultTitle();
+    titleEl.textContent = buildTitle();
+    wordCountEl.textContent = total();
+    if (document.activeElement !== wordEl) wordEl.value = state.word;
 
     colsSel.value = state.cols;
     rowsSel.value = state.rows;
@@ -140,13 +145,11 @@
     save();
   });
 
-  titleEl.addEventListener('input', () => {
-    const v = titleEl.value.trim();
-    state.title = v === defaultTitle() ? '' : v;
+  wordEl.addEventListener('input', () => {
+    state.word = wordEl.value;
+    titleEl.textContent = buildTitle();
     save();
   });
-  titleEl.addEventListener('blur', render);
-  titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') titleEl.blur(); });
 
   clearBtn.addEventListener('click', () => {
     if (!state.albums.slice(0, total()).some(Boolean)) return;
@@ -362,7 +365,7 @@
       ctx.fillRect(0, 0, W, PAD + HEADER_H + 120);
 
       // Title — centered, gradient fill, auto-shrinks to fit
-      const title = titleEl.value.trim() || defaultTitle();
+      const title = buildTitle();
       let size = 72;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
